@@ -219,7 +219,7 @@ Invoke-AndLog "$venvPython" "-m pip install -r `"$comfyPath\requirements.txt`""
 # --- Étape 5: Installation des Custom Nodes ---
 Write-Log "`nStep 5: Installing custom nodes from CSV list..." -Color Yellow
 
-$csvUrl = "https://huggingface.co/UmeAiRT/ComfyUI-Auto_installer/resolve/main/scripts/Nodes_installer/custom_nodes.csv"
+$csvUrl = "https://github.com/UmeAiRT/ComfyUI-Auto_installer/raw/refs/heads/main/csv/custom_nodes.csv"
 $scriptsFolder = Join-Path $InstallPath "scripts"
 $csvPath = Join-Path $scriptsFolder "custom_nodes.csv"
 
@@ -269,7 +269,7 @@ winget install --id Microsoft.VisualStudio.2022.BuildTools -e --source winget --
 # Triton
 Write-Log "  - Installing Triton..."
 $tritonWheel = Join-Path $InstallPath "triton-3.3.0-py3-none-any.whl"
-Download-File -Uri "https://github.com/UmeAiRT/ComfyUI-Auto_installer/blob/main/whl/triton-3.3.0-py3-none-any.whl" -OutFile $tritonWheel
+Download-File -Uri "https://github.com/UmeAiRT/ComfyUI-Auto_installer/raw/refs/heads/main/whl/triton-3.3.0-py3-none-any.whl" -OutFile $tritonWheel
 Invoke-AndLog "$venvPython" "-m pip install `"$tritonWheel`""
 Invoke-AndLog "$venvPython" "-m pip install triton-windows"
 Remove-Item $tritonWheel -ErrorAction SilentlyContinue
@@ -312,7 +312,7 @@ foreach ($dir in $dirsToProcess) {
 # SageAttention
 Write-Log "  - Installing SageAttention..."
 $sageWheel = Join-Path $InstallPath "sageattention-2.1.1+cu128torch2.7.0-cp312-cp312-win_amd64.whl"
-Download-File -Uri "https://github.com/UmeAiRT/ComfyUI-Auto_installer/blob/main/whl/sageattention-2.1.1%2Bcu128torch2.7.0-cp312-cp312-win_amd64.whl" -OutFile $sageWheel
+Download-File -Uri "https://github.com/UmeAiRT/ComfyUI-Auto_installer/raw/refs/heads/main/whl/sageattention-2.1.1+cu128torch2.7.0-cp312-cp312-win_amd64.whl" -OutFile $sageWheel
 Invoke-AndLog "$venvPython" "-m pip install `"$sageWheel`""
 Remove-Item $sageWheel -ErrorAction SilentlyContinue
 
