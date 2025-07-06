@@ -17,6 +17,6 @@ if "%BASE_DIR:~-1%"=="\" set "BASE_DIR=%BASE_DIR:~0,-1%"
 set "TMP_DIR=%BASE_DIR%\ComfyUI\temp"
 
 REM On exécute le script en utilisant la variable de chemin nettoyée.
-python main.py --use-sage-attention --disable-smart-memory --base-directory "%BASE_DIR%" --auto-launch --temp-directory 
+python main.py --use-sage-attention --disable-smart-memory --base-directory "%BASE_DIR%" --auto-launch --temp-directory "%TMP_DIR%"
 
 pause
