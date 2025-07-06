@@ -168,7 +168,7 @@ if ($pythonExe) {
 if (-not $pythonVersionOK) {
     Write-Log "  - Python 3.12 not found. Downloading and installing..." -Color Yellow
     $pythonInstallerPath = Join-Path $env:TEMP "python-3.12-installer.exe"
-    Download-File -Uri "https://www.python.org/ftp/python/3.12.4/python-3.12.4-amd64.exe" -OutFile $pythonInstallerPath
+    Download-File -Uri "https://www.python.org/ftp/python/3.12.9/python-3.12.9-amd64.exe" -OutFile $pythonInstallerPath
     Write-Log "  - Running Python installer silently... (This may take a moment)"
     # Installation silencieuse, pour tous les utilisateurs, et ajout au PATH
     Start-Process -FilePath $pythonInstallerPath -ArgumentList "/quiet InstallAllUsers=1 PrependPath=1" -Wait
