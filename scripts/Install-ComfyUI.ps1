@@ -18,8 +18,8 @@ param(
     4. Installing all dependencies into the venv.
     5. Creating a launcher to run the application easily.
 .NOTES
-    Author: Code Partner
-    Version: 7.0 (Git + Venv Architecture)
+    Author: UmeAiRT
+    Version: 3.0
 #>
 
 #===========================================================================
@@ -91,7 +91,7 @@ function Download-File {
     } else {
         $fileName = Split-Path -Path $Uri -Leaf
         if (Get-Command 'aria2c' -ErrorAction SilentlyContinue) {
-            Write-Log "Downloading: $fileName"
+            Write-Log "  - Downloading $fileName"
             $aria_args = "-c -x 16 -s 16 -k 1M --dir=`"$((Split-Path $OutFile -Parent))`" --out=`"$((Split-Path $OutFile -Leaf))`" `"$Uri`""
             Invoke-AndLog "aria2c" $aria_args
         } else {
@@ -147,8 +147,8 @@ $asciiBanner = @'
 '@
 Write-Host $asciiBanner -ForegroundColor Cyan
 Write-Log "-------------------------------------------------------------------------------"
-Write-Log "                 ComfyUI - Git & Venv Based Installer                          " -Color Yellow
-Write-Log "                                  Version 7.0                                  " -Color White
+Write-Log "                           ComfyUI - Auto-Installer                            " -Color Yellow
+Write-Log "                                  Version 3.0                                  " -Color White
 Write-Log "-------------------------------------------------------------------------------"
 
 # --- Étape 1: Vérification et Installation de Python ---
