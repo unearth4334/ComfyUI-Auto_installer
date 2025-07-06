@@ -18,6 +18,8 @@ This project provides a suite of PowerShell scripts to fully automate the instal
 - **Interactive Model Downloaders:** Dedicated scripts guide you with menus to download the model packs you want (FLUX, WAN, HIDREAM, LTXV), with recommendations based on your graphics card's VRAM.
 - **Dedicated Update Script:** A specific `UmeAiRT-Updater.ps1` script allows you to update ComfyUI, all custom nodes, and workflows with a single command.
 - **Automated Launchers:** The project generates `.bat` files to run the installation, updates, and the final application, automatically handling administrator rights and PowerShell execution policies.
+- **Supplementary modules:** The script also installs some complex modules such as: Sageattention, Triton, Visual Studio Build Tools, ...
+- **Workflow included:** A large amount of workflows are pre-installed for each model.
 
 ## Prerequisites
 
