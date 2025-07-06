@@ -14,8 +14,9 @@ REM On prépare le chemin de base en s'assurant qu'il n'y a pas de backslash à 
 REM pour éviter les problèmes d'interprétation des guillemets.
 set "BASE_DIR=%~dp0"
 if "%BASE_DIR:~-1%"=="\" set "BASE_DIR=%BASE_DIR:~0,-1%"
+set "TMP_DIR=%BASE_DIR%\ComfyUI\temp"
 
 REM On exécute le script en utilisant la variable de chemin nettoyée.
-python main.py --use-sage-attention --disable-smart-memory --base-directory "%BASE_DIR%" --auto-launch
+python main.py --use-sage-attention --disable-smart-memory --base-directory "%BASE_DIR%" --auto-launch --temp-directory 
 
 pause
