@@ -1,20 +1,20 @@
 @echo off
 
-:: Vérifie si les privilèges admin sont nécessaires pour le script PowerShell et les demande si besoin.
+REM Checks if admin privileges are required for the PowerShell script and requests them if necessary.
 net session >nul 2>&1
 if %errorlevel% NEQ 0 (
-    echo [INFO] Demande des privilèges d'administrateur pour la mise a jour...
+    echo [INFO] Requesting administrator privileges for update...
     powershell.exe -Command "Start-Process -FilePath '%~f0' -Verb RunAs"
     exit
 )
 
 title ComfyUI Updater
-echo [INFO] Lancement du script de mise a jour...
+echo [INFO] Launching the update script...
 echo.
 
-REM Exécute le script de mise à jour qui se trouve dans le dossier "scripts"
+REM Runs the update script located in the "scripts" folder
 powershell.exe -ExecutionPolicy Bypass -File "%~dp0scripts\Update-ComfyUI.ps1"
 
 echo.
-echo [INFO] Le script de mise a jour est termine.
+echo [INFO] The update script is complete.
 pause

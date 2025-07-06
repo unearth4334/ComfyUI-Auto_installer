@@ -9,17 +9,17 @@ echo           UmeAiRT Model Downloader Menu
 echo.
 echo =================================================
 echo.
-echo  Choisissez un pack de modeles a telecharger :
+echo  Choose model to download:
 echo.
 echo    1. FLUX Models
 echo    2. WAN Models
 echo    3. HIDREAM Models
 echo    4. LTXV Models
 echo.
-echo    Q. Quitter
+echo    Q. Quit
 echo.
 
-set /p "CHOICE=Votre choix : "
+set /p "CHOICE=Your choice:"
 
 if /i "%CHOICE%"=="1" goto :DOWNLOAD_FLUX
 if /i "%CHOICE%"=="2" goto :DOWNLOAD_WAN
@@ -33,28 +33,28 @@ goto :MENU
 
 
 :DOWNLOAD_FLUX
-echo Lancement du telechargement des modeles FLUX...
+echo Launch of the download of FLUX models...
 powershell.exe -ExecutionPolicy Bypass -File "%~dp0scripts\Download-FLUX-Models.ps1" -InstallPath "%~dp0"
 goto :END
 
 :DOWNLOAD_WAN
-echo Lancement du telechargement des modeles WAN...
+echo Launch of WAN template download...
 powershell.exe -ExecutionPolicy Bypass -File "%~dp0scripts\Download-WAN-Models.ps1" -InstallPath "%~dp0"
 goto :END
 
 :DOWNLOAD_HIDREAM
-echo Lancement du telechargement des modeles HIDREAM...
+echo Launch of HIDREAM model downloads...
 powershell.exe -ExecutionPolicy Bypass -File "%~dp0scripts\Download-HIDREAM-Models.ps1" -InstallPath "%~dp0"
 goto :END
 
 :DOWNLOAD_LTXV
-echo Lancement du telechargement des modeles LTXV...
+echo LTXV model download launch...
 powershell.exe -ExecutionPolicy Bypass -File "%~dp0scripts\Download-LTXV-Models.ps1" -InstallPath "%~dp0"
 goto :END
 
 
 :END
 echo.
-echo Le script de telechargement est termine.
+echo The download script is complete.
 pause
 goto :MENU
