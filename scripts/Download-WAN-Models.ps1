@@ -111,28 +111,52 @@ if($doDownload) {
     Download-File -Uri "$baseUrl/clip/umt5_xxl_fp8_e4m3fn_scaled.safetensors" -OutFile (Join-Path $clipDir "umt5_xxl_fp8_e4m3fn_scaled.safetensors")
 }
 
-if ($baseChoice -in 'A','D') { Download-File -Uri "$baseUrl/diffusion_models/WAN/wan2.1_t2v_14B_bf16.safetensors" -OutFile (Join-Path $wanDiffDir "wan2.1_t2v_14B_bf16.safetensors"); Download-File -Uri "$baseUrl/diffusion_models/WAN/wan2.1_t2v_1.3B_bf16.safetensors" -OutFile (Join-Path $wanDiffDir "wan2.1_t2v_1.3B_bf16.safetensors"); Download-File -Uri "$baseUrl/diffusion_models/WAN/wan2.1_i2v_720p_14B_bf16.safetensors" -OutFile (Join-Path $wanDiffDir "wan2.1_i2v_720p_14B_bf16.safetensors"); Download-File -Uri "$baseUrl/diffusion_models/WAN/wan2.1_i2v_480p_14B_bf16.safetensors" -OutFile (Join-Path $wanDiffDir "wan2.1_i2v_480p_14B_bf16.safetensors") }
-if ($baseChoice -in 'B','D') { Download-File -Uri "$baseUrl/diffusion_models/WAN/wan2.1_t2v_14B_fp16.safetensors" -OutFile (Join-Path $wanDiffDir "wan2.1_t2v_14B_fp16.safetensors"); Download-File -Uri "$baseUrl/diffusion_models/WAN/wan2.1_t2v_1.3B_fp16.safetensors" -OutFile (Join-Path $wanDiffDir "wan2.1_t2v_1.3B_fp16.safetensors"); Download-File -Uri "$baseUrl/diffusion_models/WAN/wan2.1_i2v_720p_14B_fp16.safetensors" -OutFile (Join-Path $wanDiffDir "wan2.1_i2v_720p_14B_fp16.safetensors"); Download-File -Uri "$baseUrl/diffusion_models/WAN/wan2.1_i2v_480p_14B_fp16.safetensors" -OutFile (Join-Path $wanDiffDir "wan2.1_i2v_480p_14B_fp16.safetensors") }
-if ($baseChoice -in 'C','D') { Download-File -Uri "$baseUrl/diffusion_models/WAN/wan2.1_t2v_14B_fp8_e4m3fn.safetensors" -OutFile (Join-Path $wanDiffDir "wan2.1_t2v_14B_fp8_e4m3fn.safetensors"); Download-File -Uri "$baseUrl/diffusion_models/WAN/wan2.1_t2v_1.3B_fp8_e4m3fn.safetensors" -OutFile (Join-Path $wanDiffDir "wan2.1_t2v_1.3B_fp8_e4m3fn.safetensors"); Download-File -Uri "$baseUrl/diffusion_models/WAN/wan2.1_i2v_720p_14B_fp8_e4m3fn.safetensors" -OutFile (Join-Path $wanDiffDir "wan2.1_i2v_720p_14B_fp8_e4m3fn.safetensors"); Download-File -Uri "$baseUrl/diffusion_models/WAN/wan2.1_i2v_480p_14B_fp8_e4m3fn.safetensors" -OutFile (Join-Path $wanDiffDir "wan2.1_i2v_480p_14B_fp8_e4m3fn.safetensors") }
-if ($ggufT2VChoice -in 'A','D') { Download-File -Uri "$baseUrl/unet/WAN/wan2.1-t2v-14b-Q8_0.gguf" -OutFile (Join-Path $wanUnetDir "wan2.1-t2v-14b-Q8_0.gguf") }
-if ($ggufT2VChoice -in 'B','D') { Download-File -Uri "$baseUrl/unet/WAN/wan2.1-t2v-14b-Q5_K_M.gguf" -OutFile (Join-Path $wanUnetDir "wan2.1-t2v-14b-Q5_K_M.gguf") }
-if ($ggufT2VChoice -in 'C','D') { Download-File -Uri "$baseUrl/unet/WAN/wan2.1-t2v-14b-Q3_K_S.gguf" -OutFile (Join-Path $wanUnetDir "wan2.1-t2v-14b-Q3_K_S.gguf") }
-if ($gguf480Choice -in 'A','D') { Download-File -Uri "$baseUrl/unet/WAN/wan2.1-i2v-14b-480p-Q8_0.gguf" -OutFile (Join-Path $wanUnetDir "wan2.1-i2v-14b-480p-Q8_0.gguf") }
-if ($gguf480Choice -in 'B','D') { Download-File -Uri "$baseUrl/unet/WAN/wan2.1-i2v-14b-480p-Q5_K_M.gguf" -OutFile (Join-Path $wanUnetDir "wan2.1-i2v-14b-480p-Q5_K_M.gguf") }
-if ($gguf480Choice -in 'C','D') { Download-File -Uri "$baseUrl/unet/WAN/wan2.1-i2v-14b-480p-Q3_K_S.gguf" -OutFile (Join-Path $wanUnetDir "wan2.1-i2v-14b-480p-Q3_K_S.gguf") }
-if ($gguf720Choice -in 'A','D') { Download-File -Uri "$baseUrl/unet/WAN/wan2.1-i2v-14b-720p-Q8_0.gguf" -OutFile (Join-Path $wanUnetDir "wan2.1-i2v-14b-720p-Q8_0.gguf") }
-if ($gguf720Choice -in 'B','D') { Download-File -Uri "$baseUrl/unet/WAN/wan2.1-i2v-14b-720p-Q5_K_M.gguf" -OutFile (Join-Path $wanUnetDir "wan2.1-i2v-14b-720p-Q5_K_M.gguf") }
-if ($gguf720Choice -in 'C','D') { Download-File -Uri "$baseUrl/unet/WAN/wan2.1-i2v-14b-720p-Q3_K_S.gguf" -OutFile (Join-Path $wanUnetDir "wan2.1-i2v-14b-720p-Q3_K_S.gguf") }
-if ($controlChoice -in 'A','C') { Download-File -Uri "$baseUrl/diffusion_models/WAN/wan2.1-fun-14B-control.safetensors" -OutFile (Join-Path $wanDiffDir "wan2.1-fun-14B-control.safetensors") }
-if ($controlChoice -in 'B','C') { Download-File -Uri "https://huggingface.co/TFMC/Wan2.1-Fun-V1.1-14B-InP-FP8/resolve/main/Wan2.1-Fun-V1_1-InP-14B_fp8_e4m3fn.safetensors" -OutFile (Join-Path $wanDiffDir "Wan2.1-Fun-V1_1-InP-14B_fp8_e4m3fn.safetensors") }
-if ($controlGgufChoice -in 'A','D') { Download-File -Uri "$baseUrl/unet/WAN/wan2.1-fun-14b-control-Q8_0.gguf" -OutFile (Join-Path $wanUnetDir "wan2.1-fun-14b-control-Q8_0.gguf") }
-if ($controlGgufChoice -in 'B','D') { Download-File -Uri "$baseUrl/unet/WAN/wan2.1-fun-14b-control-Q5_K_M.gguf" -OutFile (Join-Path $wanUnetDir "wan2.1-fun-14b-control-Q5_K_M.gguf") }
-if ($controlGgufChoice -in 'C','D') { Download-File -Uri "$baseUrl/unet/WAN/wan2.1-fun-14b-control-Q3_K_S.gguf" -OutFile (Join-Path $wanUnetDir "wan2.1-fun-14b-control-Q3_K_S.gguf") }
-if ($vaceChoice -in 'A','C') { Download-File -Uri "$baseUrl/diffusion_models/WAN/wan2.1_vace_14B_fp16.safetensors" -OutFile (Join-Path $wanDiffDir "wan2.1_vace_14B_fp16.safetensors") }
-if ($vaceChoice -in 'B','C') { Download-File -Uri "https://huggingface.co/Kamikaze-88/Wan2.1-VACE-14B-fp8/resolve/main/wan2.1_vace_14B_fp8_e4m3fn.safetensors" -OutFile (Join-Path $wanDiffDir "wan2.1_vace_14B_fp8_e4m3fn.safetensors") }
-if ($vaceGgufChoice -in 'A','D') { Download-File -Uri "$baseUrl/unet/WAN/Wan2.1-VACE-14B-Q8_0.gguf" -OutFile (Join-Path $wanUnetDir "Wan2.1-VACE-14B-Q8_0.gguf") }
-if ($vaceGgufChoice -in 'B','D') { Download-File -Uri "$baseUrl/unet/WAN/Wan2.1-VACE-14B-Q5_K_S.gguf" -OutFile (Join-Path $wanUnetDir "Wan2.1-VACE-14B-Q5_K_S.gguf") }
-if ($vaceGgufChoice -in 'C','D') { Download-File -Uri "$baseUrl/unet/WAN/Wan2.1-VACE-14B-Q4_K_S.gguf" -OutFile (Join-Path $wanUnetDir "Wan2.1-VACE-14B-Q4_K_S.gguf") }
+# Base Models
+if ($baseChoice -ne 'E') { Write-Log "`nDownloading Base Models..."
+    if ($baseChoice -in 'A','D') { Download-File -Uri "$baseUrl/diffusion_models/WAN/wan2.1_t2v_14B_bf16.safetensors" -OutFile (Join-Path $wanDiffDir "wan2.1_t2v_14B_bf16.safetensors"); Download-File -Uri "$baseUrl/diffusion_models/WAN/wan2.1_i2v_720p_14B_bf16.safetensors" -OutFile (Join-Path $wanDiffDir "wan2.1_i2v_720p_14B_bf16.safetensors"); Download-File -Uri "$baseUrl/diffusion_models/WAN/wan2.1_i2v_480p_14B_bf16.safetensors" -OutFile (Join-Path $wanDiffDir "wan2.1_i2v_480p_14B_bf16.safetensors") }
+    if ($baseChoice -in 'B','D') { Download-File -Uri "$baseUrl/diffusion_models/WAN/wan2.1_t2v_14B_fp16.safetensors" -OutFile (Join-Path $wanDiffDir "wan2.1_t2v_14B_fp16.safetensors"); Download-File -Uri "$baseUrl/diffusion_models/WAN/wan2.1_i2v_720p_14B_fp16.safetensors" -OutFile (Join-Path $wanDiffDir "wan2.1_i2v_720p_14B_fp16.safetensors"); Download-File -Uri "$baseUrl/diffusion_models/WAN/wan2.1_i2v_480p_14B_fp16.safetensors" -OutFile (Join-Path $wanDiffDir "wan2.1_i2v_480p_14B_fp16.safetensors") }
+    if ($baseChoice -in 'C','D') { Download-File -Uri "$baseUrl/diffusion_models/WAN/wan2.1_t2v_14B_fp8_e4m3fn.safetensors" -OutFile (Join-Path $wanDiffDir "wan2.1_t2v_14B_fp8_e4m3fn.safetensors"); Download-File -Uri "$baseUrl/diffusion_models/WAN/wan2.1_i2v_720p_14B_fp8_e4m3fn.safetensors" -OutFile (Join-Path $wanDiffDir "wan2.1_i2v_720p_14B_fp8_e4m3fn.safetensors"); Download-File -Uri "$baseUrl/diffusion_models/WAN/wan2.1_i2v_480p_14B_fp8_e4m3fn.safetensors" -OutFile (Join-Path $wanDiffDir "wan2.1_i2v_480p_14B_fp8_e4m3fn.safetensors") }
+}
+# GGUF T2V
+if ($ggufT2VChoice -ne 'E') { Write-Log "`nDownloading T2V GGUF Models..."
+    if ($ggufT2VChoice -in 'A','D') { Download-File -Uri "$baseUrl/unet/WAN/wan2.1-t2v-14b-Q8_0.gguf" -OutFile (Join-Path $wanUnetDir "wan2.1-t2v-14b-Q8_0.gguf"); Download-File -Uri "$baseUrl/clip/umt5-xxl-encoder-Q8_0.gguf" -OutFile (Join-Path $clipDir "umt5-xxl-encoder-Q8_0.gguf") }
+    if ($ggufT2VChoice -in 'B','D') { Download-File -Uri "$baseUrl/unet/WAN/wan2.1-t2v-14b-Q5_K_M.gguf" -OutFile (Join-Path $wanUnetDir "wan2.1-t2v-14b-Q5_K_M.gguf"); Download-File -Uri "$baseUrl/clip/umt5-xxl-encoder-Q5_K_M.gguf" -OutFile (Join-Path $clipDir "umt5-xxl-encoder-Q5_K_M.gguf") }
+    if ($ggufT2VChoice -in 'C','D') { Download-File -Uri "$baseUrl/unet/WAN/wan2.1-t2v-14b-Q3_K_S.gguf" -OutFile (Join-Path $wanUnetDir "wan2.1-t2v-14b-Q3_K_S.gguf"); Download-File -Uri "$baseUrl/clip/umt5-xxl-encoder-Q3_K_S.gguf" -OutFile (Join-Path $clipDir "umt5-xxl-encoder-Q3_K_S.gguf") }
+}
+# GGUF I2V 480p
+if ($gguf480Choice -ne 'E') { Write-Log "`nDownloading I2V 480p GGUF Models..."
+    if ($gguf480Choice -in 'A','D') { Download-File -Uri "$baseUrl/unet/WAN/wan2.1-i2v-14b-480p-Q8_0.gguf" -OutFile (Join-Path $wanUnetDir "wan2.1-i2v-14b-480p-Q8_0.gguf"); Download-File -Uri "$baseUrl/clip/umt5-xxl-encoder-Q8_0.gguf" -OutFile (Join-Path $clipDir "umt5-xxl-encoder-Q8_0.gguf") }
+    if ($gguf480Choice -in 'B','D') { Download-File -Uri "$baseUrl/unet/WAN/wan2.1-i2v-14b-480p-Q5_K_M.gguf" -OutFile (Join-Path $wanUnetDir "wan2.1-i2v-14b-480p-Q5_K_M.gguf"); Download-File -Uri "$baseUrl/clip/umt5-xxl-encoder-Q5_K_M.gguf" -OutFile (Join-Path $clipDir "umt5-xxl-encoder-Q5_K_M.gguf") }
+    if ($gguf480Choice -in 'C','D') { Download-File -Uri "$baseUrl/unet/WAN/wan2.1-i2v-14b-480p-Q3_K_S.gguf" -OutFile (Join-Path $wanUnetDir "wan2.1-i2v-14b-480p-Q3_K_S.gguf"); Download-File -Uri "$baseUrl/clip/umt5-xxl-encoder-Q3_K_S.gguf" -OutFile (Join-Path $clipDir "umt5-xxl-encoder-Q3_K_S.gguf") }
+}
+# GGUF I2V 720p
+if ($gguf720Choice -ne 'E') { Write-Log "`nDownloading I2V 720p GGUF Models..."
+    if ($gguf720Choice -in 'A','D') { Download-File -Uri "$baseUrl/unet/WAN/wan2.1-i2v-14b-720p-Q8_0.gguf" -OutFile (Join-Path $wanUnetDir "wan2.1-i2v-14b-720p-Q8_0.gguf"); Download-File -Uri "$baseUrl/clip/umt5-xxl-encoder-Q8_0.gguf" -OutFile (Join-Path $clipDir "umt5-xxl-encoder-Q8_0.gguf") }
+    if ($gguf720Choice -in 'B','D') { Download-File -Uri "$baseUrl/unet/WAN/wan2.1-i2v-14b-720p-Q5_K_M.gguf" -OutFile (Join-Path $wanUnetDir "wan2.1-i2v-14b-720p-Q5_K_M.gguf"); Download-File -Uri "$baseUrl/clip/umt5-xxl-encoder-Q5_K_M.gguf" -OutFile (Join-Path $clipDir "umt5-xxl-encoder-Q5_K_M.gguf") }
+    if ($gguf720Choice -in 'C','D') { Download-File -Uri "$baseUrl/unet/WAN/wan2.1-i2v-14b-720p-Q3_K_S.gguf" -OutFile (Join-Path $wanUnetDir "wan2.1-i2v-14b-720p-Q3_K_S.gguf"); Download-File -Uri "$baseUrl/clip/umt5-xxl-encoder-Q3_K_S.gguf" -OutFile (Join-Path $clipDir "umt5-xxl-encoder-Q3_K_S.gguf") }
+}
+# ControlNet Models
+if ($controlChoice -ne 'D') { Write-Log "`nDownloading ControlNet Models..."
+    if ($controlChoice -in 'A','C') { Download-File -Uri "$baseUrl/diffusion_models/WAN/wan2.1-fun-14B-control.safetensors" -OutFile (Join-Path $wanDiffDir "wan2.1-fun-14B-control.safetensors") }
+    if ($controlChoice -in 'B','C') { Download-File -Uri "https://huggingface.co/TFMC/Wan2.1-Fun-V1.1-14B-InP-FP8/resolve/main/Wan2.1-Fun-V1_1-InP-14B_fp8_e4m3fn.safetensors" -OutFile (Join-Path $wanDiffDir "Wan2.1-Fun-V1_1-InP-14B_fp8_e4m3fn.safetensors") }
+}
+# ControlNet GGUF
+if ($controlGgufChoice -ne 'E') { Write-Log "`nDownloading ControlNet GGUF Models..."
+    if ($controlGgufChoice -in 'A','D') { Download-File -Uri "$baseUrl/unet/WAN/wan2.1-fun-14b-control-Q8_0.gguf" -OutFile (Join-Path $wanUnetDir "wan2.1-fun-14b-control-Q8_0.gguf"); Download-File -Uri "$baseUrl/clip/umt5-xxl-encoder-Q8_0.gguf" -OutFile (Join-Path $clipDir "umt5-xxl-encoder-Q8_0.gguf") }
+    if ($controlGgufChoice -in 'B','D') { Download-File -Uri "$baseUrl/unet/WAN/wan2.1-fun-14b-control-Q5_K_M.gguf" -OutFile (Join-Path $wanUnetDir "wan2.1-fun-14b-control-Q5_K_M.gguf"); Download-File -Uri "$baseUrl/clip/umt5-xxl-encoder-Q5_K_M.gguf" -OutFile (Join-Path $clipDir "umt5-xxl-encoder-Q5_K_M.gguf") }
+    if ($controlGgufChoice -in 'C','D') { Download-File -Uri "$baseUrl/unet/WAN/wan2.1-fun-14b-control-Q3_K_S.gguf" -OutFile (Join-Path $wanUnetDir "wan2.1-fun-14b-control-Q3_K_S.gguf"); Download-File -Uri "$baseUrl/clip/umt5-xxl-encoder-Q3_K_S.gguf" -OutFile (Join-Path $clipDir "umt5-xxl-encoder-Q3_K_S.gguf") }
+}
+# VACE Models
+if ($vaceChoice -ne 'D') { Write-Log "`nDownloading VACE Models..."
+    if ($vaceChoice -in 'A','C') { Download-File -Uri "$baseUrl/diffusion_models/WAN/wan2.1_vace_14B_fp16.safetensors" -OutFile (Join-Path $wanDiffDir "wan2.1_vace_14B_fp16.safetensors") }
+    if ($vaceChoice -in 'B','C') { Download-File -Uri "https://huggingface.co/Kamikaze-88/Wan2.1-VACE-14B-fp8/resolve/main/wan2.1_vace_14B_fp8_e4m3fn.safetensors" -OutFile (Join-Path $wanDiffDir "wan2.1_vace_14B_fp8_e4m3fn.safetensors") }
+}
+# VACE GGUF
+if ($vaceGgufChoice -ne 'E') { Write-Log "`nDownloading VACE GGUF Models..."
+    if ($vaceGgufChoice -in 'A','D') { Download-File -Uri "$baseUrl/unet/WAN/Wan2.1-VACE-14B-Q8_0.gguf" -OutFile (Join-Path $wanUnetDir "Wan2.1-VACE-14B-Q8_0.gguf"); Download-File -Uri "$baseUrl/clip/umt5-xxl-encoder-Q8_0.gguf" -OutFile (Join-Path $clipDir "umt5-xxl-encoder-Q8_0.gguf") }
+    if ($vaceGgufChoice -in 'B','D') { Download-File -Uri "$baseUrl/unet/WAN/Wan2.1-VACE-14B-Q5_K_S.gguf" -OutFile (Join-Path $wanUnetDir "Wan2.1-VACE-14B-Q5_K_S.gguf"); Download-File -Uri "$baseUrl/clip/umt5-xxl-encoder-Q5_K_M.gguf" -OutFile (Join-Path $clipDir "umt5-xxl-encoder-Q5_K_M.gguf") }
+    if ($vaceGgufChoice -in 'C','D') { Download-File -Uri "$baseUrl/unet/WAN/Wan2.1-VACE-14B-Q4_K_S.gguf" -OutFile (Join-Path $wanUnetDir "Wan2.1-VACE-14B-Q4_K_S.gguf"); Download-File -Uri "$baseUrl/clip/umt5-xxl-encoder-Q3_K_S.gguf" -OutFile (Join-Path $clipDir "umt5-xxl-encoder-Q3_K_S.gguf") }
+}
 
 Write-Log "`nWAN model downloads complete." -Color Green
 Read-Host "Press Enter to return to the main installer."
