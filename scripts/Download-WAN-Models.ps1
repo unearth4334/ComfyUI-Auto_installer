@@ -102,13 +102,14 @@ $vaceGgufChoice = Ask-Question "Do you want to download WAN VACE GGUF models?" @
 # --- Download files based on answers ---
 Write-Log "`nStarting WAN model downloads..." -Color Cyan
 $baseUrl = "https://huggingface.co/UmeAiRT/ComfyUI-Auto_installer/resolve/main/models"
-$wanDiffDir = Join-Path $modelsPath "diffusion_models\WAN"; $wanUnetDir = Join-Path $modelsPath "unet\WAN"; $clipDir = Join-Path $modelsPath "clip"; $vaeDir  = Join-Path $modelsPath "vae"
+$wanDiffDir = Join-Path $modelsPath "diffusion_models\WAN"; $wanUnetDir = Join-Path $modelsPath "unet\WAN"; $clipDir = Join-Path $modelsPath "clip"; $vaeDir  = Join-Path $modelsPath "vae" ; $visionDir  = Join-Path $modelsPath "clip_vision"
 New-Item -Path $wanDiffDir, $wanUnetDir, $clipDir, $vaeDir -ItemType Directory -Force | Out-Null
 $doDownload = ($baseChoice -ne 'E' -or $ggufT2VChoice -ne 'E' -or $gguf480Choice -ne 'E' -or $gguf720Choice -ne 'E' -or $controlChoice -ne 'D' -or $controlGgufChoice -ne 'E' -or $vaceChoice -ne 'D' -or $vaceGgufChoice -ne 'E')
 
 if($doDownload) {
     Download-File -Uri "$baseUrl/vae/wan_2.1_vae.safetensors" -OutFile (Join-Path $vaeDir "wan_2.1_vae.safetensors")
     Download-File -Uri "$baseUrl/clip/umt5_xxl_fp8_e4m3fn_scaled.safetensors" -OutFile (Join-Path $clipDir "umt5_xxl_fp8_e4m3fn_scaled.safetensors")
+    Download-File -Uri "$baseUrl/clip_vision/clip_vision_h.safetensors" -OutFile (Join-Path $visionDir "clip_vision_h.safetensors")
 }
 
 # Base Models
