@@ -70,8 +70,7 @@ function Ask-Question {
 #===========================================================================
 
 $InstallPath = $InstallPath.Trim('"')
-$comfyPath = Join-Path $InstallPath "ComfyUI"
-$modelsPath = Join-Path $comfyPath "models"
+$modelsPath = Join-Path $InstallPath "models"
 if (-not (Test-Path $modelsPath)) { Write-Log "Could not find ComfyUI models path at '$modelsPath'. Exiting." -Color Red; Read-Host "Press Enter to exit."; exit }
 
 # --- GPU Detection ---
