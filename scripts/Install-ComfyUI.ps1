@@ -207,6 +207,7 @@ if (-not (Test-Path (Join-Path $comfyPath "venv"))) {
 } else {
     Write-Log "  - Venv already exists. Skipping creation." -Color Green
 }
+Invoke-AndLog "git" "config --global --add safe.directory `"$comfyPath`""
 
 # --- Étape 4: Installation des dépendances dans le Venv ---
 Write-Log "`nStep 4: Installing all Python dependencies into the venv..." -Color Yellow
