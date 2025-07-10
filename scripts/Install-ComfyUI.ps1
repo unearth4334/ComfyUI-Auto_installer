@@ -130,6 +130,15 @@ function Install-Aria2-Binary {
     Write-Log "--- Aria2 binary installation complete ---" -Color Magenta
 }
 
+function Refresh-Path {
+    Write-Log "  - Refreshing PATH environment variable for the current session..." -Color DarkGray
+    # Récupère le PATH système et utilisateur depuis le registre (la version la plus à jour)
+    $machinePath = [System.Environment]::GetEnvironmentVariable("Path", "Machine")
+    $userPath = [System.Environment]::GetEnvironmentVariable("Path", "User")
+    
+    # Met à jour la variable PATH pour la session PowerShell actuelle
+    $env:Path = "$machinePath;$userPath"
+}
 
 #===========================================================================
 # SECTION 2: MAIN SCRIPT EXECUTION
@@ -174,16 +183,17 @@ if (-not $pythonVersionOK) {
     Start-Process -FilePath $pythonInstallerPath -ArgumentList "/quiet InstallAllUsers=1 PrependPath=1" -Wait
     Remove-Item $pythonInstallerPath
     Write-Log "  - Python 3.12 installation complete." -Color Green
+	Refresh-Path
 }
 
 # --- Étape 2: Installation des dépendances (Aria2, 7-Zip, Git) ---
 Write-Log "`nStep 2: Checking for required tools..." -Color Yellow
 if (-not (Get-Command 'aria2c' -ErrorAction SilentlyContinue)) { Install-Aria2-Binary } else { Write-Log "  - Aria2 is already installed." -Color Green }
 if (-not (Test-Path $sevenZipPath)) {
-    $sevenZipInstaller = Join-Path $env:TEMP "7z-installer.exe"; Download-File -Uri "https://www.7-zip.org/a/7z2201-x64.exe" -OutFile $sevenZipInstaller; Start-Process -FilePath $sevenZipInstaller -ArgumentList "/S" -Wait; Remove-Item $sevenZipInstaller
+    $sevenZipInstaller = Join-Path $env:TEMP "7z-installer.exe"; Download-File -Uri "https://www.7-zip.org/a/7z2201-x64.exe" -OutFile $sevenZipInstaller; Start-Process -FilePath $sevenZipInstaller -ArgumentList "/S" -Wait; Remove-Item $sevenZipInstaller; Refresh-Path
 } else { Write-Log "  - 7-Zip is already installed." -Color Green }
 if (-not (Get-Command git.exe -ErrorAction SilentlyContinue)) {
-    $gitInstaller = Join-Path $env:TEMP "Git-Installer.exe"; Download-File -Uri "https://github.com/git-for-windows/git/releases/download/v2.41.0.windows.3/Git-2.41.0.3-64-bit.exe" -OutFile $gitInstaller; Start-Process -FilePath $gitInstaller -ArgumentList "/VERYSILENT" -Wait; Remove-Item $gitInstaller
+    $gitInstaller = Join-Path $env:TEMP "Git-Installer.exe"; Download-File -Uri "https://github.com/git-for-windows/git/releases/download/v2.41.0.windows.3/Git-2.41.0.3-64-bit.exe" -OutFile $gitInstaller; Start-Process -FilePath $gitInstaller -ArgumentList "/VERYSILENT" -Wait; Remove-Item $gitInstaller; Refresh-Path
 }
 Invoke-AndLog "git" "config --system core.longpaths true"
 Write-Log "  - Git is ready." -Color Green
