@@ -92,7 +92,7 @@ function Download-File {
         $fileName = Split-Path -Path $Uri -Leaf
         if (Get-Command 'aria2c' -ErrorAction SilentlyContinue) {
             Write-Log "  - Downloading $fileName"
-            $aria_args = "-c -x 16 -s 16 -k 1M --dir=`"$((Split-Path $OutFile -Parent))`" --out=`"$((Split-Path $OutFile -Leaf))`" `"$Uri`""
+            $aria_args = "--disable-ipv6 -c -x 16 -s 16 -k 1M --dir=`"$((Split-Path $OutFile -Parent))`" --out=`"$((Split-Path $OutFile -Leaf))`" `"$Uri`""
             Invoke-AndLog "aria2c" $aria_args
         } else {
             Write-Log "Aria2 not found. Falling back to standard download: $fileName" -Color Yellow
