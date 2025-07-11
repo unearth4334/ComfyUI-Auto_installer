@@ -280,7 +280,18 @@ Write-Log "`nStep 6: Installing supplementary modules..." -Color Yellow
 
 # VS Build Tools
 Write-Log "  - Installing Visual Studio Build Tools..."
-winget install --id Microsoft.VisualStudio.2022.BuildTools -e --source winget --override "--quiet --wait --norestart --add Microsoft.VisualStudio.Component.VC.Tools.x86.x64 --add Microsoft.VisualStudio.Component.Windows10SDK.20348"
+$wingetArgs = @(
+    "install",
+    "--id", "Microsoft.VisualStudio.2022.BuildTools",
+    "--exact",
+    "--source", "winget",
+    "--override",
+    "--accept-package-agreements",
+    "--accept-source-agreements", 
+    "--add", "Microsoft.VisualStudio.Component.VC.Tools.x86.x64",
+    "--add", "Microsoft.VisualStudio.Component.Windows10SDK.20348"
+)
+Invoke-AndLog "winget" ($wingetArgs -join " ")
 
 # Triton
 Write-Log "  - Installing Triton..."
