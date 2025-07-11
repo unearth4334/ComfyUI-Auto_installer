@@ -279,19 +279,32 @@ if (-not (Test-Path $csvPath)) {
 Write-Log "`nStep 6: Installing supplementary modules..." -Color Yellow
 
 # VS Build Tools
-Write-Log "  - Installing Visual Studio Build Tools..."
-$wingetArgs = @(
-    "install",
-    "--id", "Microsoft.VisualStudio.2022.BuildTools",
-    "--exact",
-    "--source", "winget",
-    "--override",
-    "--accept-package-agreements",
-    "--accept-source-agreements", 
-    "--add", "Microsoft.VisualStudio.Component.VC.Tools.x86.x64",
-    "--add", "Microsoft.VisualStudio.Component.Windows10SDK.20348"
-)
-Invoke-AndLog "winget" ($wingetArgs -join " ")
+Write-Log "  - Installing Visual Studio Build Tools (required for some packages)..."
+$vsInstallerUrl = "https://aka.ms/vs/17/release/vs_BuildTools.exe"
+$vsInstallerPath = Join-Path $env:TEMP "vs_buildtools.exe"
+
+# Télécharge l'installateur officiel
+Download-File -Uri $vsInstallerUrl -OutFile $vsInstallerPath
+
+if (Test-Path $vsInstallerPath) {
+    # Définit les composants exacts à installer
+    $vsArgs = @(
+        "--quiet",
+        "--wait",
+        "--norestart",
+        "--add", "Microsoft.VisualStudio.Component.VC.Tools.x86.x64",
+        "--add", "Microsoft.VisualStudio.Component.Windows10SDK.20348"
+    )
+    
+    # Exécute l'installateur avec les arguments
+    Write-Log "    - Running Visual Studio Build Tools installer... (This may take several minutes)"
+    Invoke-AndLog $vsInstallerPath ($vsArgs -join " ")
+    
+    # Nettoie le fichier d'installation
+    Remove-Item $vsInstallerPath -ErrorAction SilentlyContinue
+} else {
+    Write-Log "  - FAILED to download Visual Studio Build Tools installer." -Color Red
+}
 
 # Triton
 Write-Log "  - Installing Triton..."
