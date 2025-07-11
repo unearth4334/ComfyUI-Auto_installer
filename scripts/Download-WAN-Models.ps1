@@ -33,21 +33,26 @@ function Invoke-AndLog {
     } 
 }
 
-function Download-File { 
-    param([string]$Uri, [string]$OutFile) 
-    if (Test-Path $OutFile) { 
-        Write-Log "Skipping: $((Split-Path $OutFile -Leaf)) (already exists)." -Color Gray 
-    } else { 
-        $fileName = Split-Path -Path $Uri -Leaf
-        if (Get-Command 'aria2c' -ErrorAction SilentlyContinue) { 
-            Write-Log "Downloading: $fileName"
-            $aria_args = "-c -x 16 -s 16 -k 1M --dir=`"$((Split-Path $OutFile -Parent))`" --out=`"$((Split-Path $OutFile -Leaf))`" `"$Uri`""
-            Invoke-AndLog "aria2c" $aria_args 
-        } else { 
-            Write-Log "Aria2 not found. Falling back to standard download: $fileName" -Color Yellow
-            Invoke-WebRequest -Uri $Uri -OutFile $OutFile 
-        } 
-    } 
+function Download-File {
+    param([string]$Uri, [string]$OutFile)
+    if (Test-Path $OutFile) {
+        Write-Log "Skipping: $((Split-Path $OutFile -Leaf)) (already exists)." -Color Gray
+        return
+    }
+
+    # Se présenter comme un navigateur moderne pour éviter les blocages
+    $modernUserAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36"
+    $fileName = Split-Path -Path $Uri -Leaf
+
+    if (Get-Command 'aria2c' -ErrorAction SilentlyContinue) {
+        Write-Log "Downloading: $fileName"
+        $aria_args = "--disable-ipv6 -c -x 16 -s 16 -k 1M --user-agent=`"$modernUserAgent`" --dir=`"$((Split-Path $OutFile -Parent))`" --out=`"$((Split-Path $OutFile -Leaf))`" `"$Uri`""
+        Invoke-AndLog "aria2c" $aria_args
+    } else {
+        Write-Log "Aria2 not found. Falling back to standard download: $fileName" -Color Yellow
+        # On ajoute le User-Agent à Invoke-WebRequest
+        Invoke-WebRequest -Uri $Uri -OutFile $OutFile -UserAgent $modernUserAgent
+    }
 }
 
 function Ask-Question { 
