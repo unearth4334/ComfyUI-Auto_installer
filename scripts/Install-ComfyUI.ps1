@@ -351,11 +351,31 @@ foreach ($dir in $dirsToProcess) {
 }
 
 # SageAttention
-Write-Log "  - Installing SageAttention..."
-$sageWheel = Join-Path $InstallPath "sageattention-2.1.1+cu128torch2.7.0-cp312-cp312-win_amd64.whl"
-Download-File -Uri "https://github.com/UmeAiRT/ComfyUI-Auto_installer/raw/refs/heads/main/whl/sageattention-2.1.1+cu128torch2.7.0-cp312-cp312-win_amd64.whl" -OutFile $sageWheel
-Invoke-AndLog "$venvPython" "-m pip install `"$sageWheel`""
-Remove-Item $sageWheel -ErrorAction SilentlyContinue
+Write-Log "  - Installing SageAttention from source..."
+$sageRepoPath = Join-Path $InstallPath "temp_SageAttention"
+
+# Cloner le dépôt dans un dossier temporaire
+Invoke-AndLog "git" "clone https://github.com/thu-ml/SageAttention.git `"$sageRepoPath`""
+
+# Vérifier si le clonage a réussi, puis installer
+if (Test-Path $sageRepoPath) {
+    try {
+        Write-Log "    - Repository cloned. Installing package..."
+        
+        # Utiliser pip pour installer depuis la source locale (standard moderne)
+        Invoke-AndLog "$venvPython" "-m pip install `"$sageRepoPath`""
+        
+        Write-Log "    - SageAttention installed successfully." -Color Green
+    } catch {
+        Write-Log "    - FAILED to install SageAttention from source. Error: $($_.Exception.Message)" -Color Red
+    } finally {
+        # Nettoyer le dossier temporaire du code source
+        Write-Log "    - Cleaning up temporary source folder..."
+        Remove-Item -Path $sageRepoPath -Recurse -Force
+    }
+} else {
+    Write-Log "  - FAILED to clone SageAttention repository." -Color Red
+}
 
 # --- Étape 7: Téléchargement des Workflows et Settings ---
 Write-Log "`nStep 7: Downloading Workflows & Settings..." -Color Yellow
