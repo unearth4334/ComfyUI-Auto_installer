@@ -96,7 +96,7 @@ function Download-File {
     $fileName = Split-Path -Path $Uri -Leaf
 
     if (Get-Command 'aria2c' -ErrorAction SilentlyContinue) {
-        Write-Log "Downloading: $fileName"
+        Write-Log "  - Downloading: $fileName"
         $aria_args = "--disable-ipv6 -c -x 16 -s 16 -k 1M --user-agent=`"$modernUserAgent`" --dir=`"$((Split-Path $OutFile -Parent))`" --out=`"$((Split-Path $OutFile -Leaf))`" `"$Uri`""
         Invoke-AndLog "aria2c" $aria_args
     } else {
@@ -164,6 +164,35 @@ Write-Log "---------------------------------------------------------------------
 Write-Log "                           ComfyUI - Auto-Installer                            " -Color Yellow
 Write-Log "                                  Version 3.0                                  " -Color White
 Write-Log "-------------------------------------------------------------------------------"
+
+Write-Log "`nStep 0: Checking for CUDA 12.8 Toolkit..." -Color Yellow
+$cudaFound = $false
+$nvccExe = Get-Command nvcc -ErrorAction SilentlyContinue
+
+if ($nvccExe) {
+    # nvcc a été trouvé, on vérifie la version
+    $versionOutput = (nvcc --version 2>&1)
+    if ($versionOutput -join "`n" -like "*release 12.8*") {
+        Write-Log "  - Found CUDA Toolkit 12.8." -Color Green
+        $cudaFound = $true
+    } else {
+        Write-Log "  - An incorrect version of CUDA Toolkit was found." -Color Yellow
+        # Affiche les premières lignes de la sortie pour le diagnostic
+        Write-Log ($versionOutput | Select-Object -First 4)
+    }
+} else {
+    Write-Log "  - CUDA Toolkit (nvcc) not found in PATH." -Color Yellow
+}
+
+if (-not $cudaFound) {
+    Write-Log "--------------------------------- WARNING ---------------------------------" -Color Red
+    Write-Log "NVIDIA CUDA Toolkit v12.8 is not detected on your system." -Color Red
+    Write-Log "It is required for building some modules and for full performance." -Color Yellow
+    Write-Log "Please download and install it manually from this official link:" -Color Yellow
+    Write-Log "https://developer.nvidia.com/cuda-12-8-1-download-archive" -Color Cyan
+    Read-Host "`nAfter installation, please RESTART this script. Press Enter to continue without CUDA for now, or close this window to abort."
+    Write-Log "---------------------------------------------------------------------------"
+}
 
 # --- Étape 1: Vérification et Installation de Python ---
 Write-Log "Step 1: Checking for Python 3.12..." -Color Yellow
