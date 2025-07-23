@@ -172,8 +172,8 @@ $nvccExe = Get-Command nvcc -ErrorAction SilentlyContinue
 if ($nvccExe) {
     # nvcc a été trouvé, on vérifie la version
     $versionOutput = (nvcc --version 2>&1)
-    if ($versionOutput -join "`n" -like "*release 12.8*") {
-        Write-Log "  - Found CUDA Toolkit 12.8." -Color Green
+    if ($versionOutput -join "`n" -like "*release 12.9*") {
+        Write-Log "  - Found CUDA Toolkit 12.9." -Color Green
         $cudaFound = $true
     } else {
         Write-Log "  - An incorrect version of CUDA Toolkit was found." -Color Yellow
@@ -186,10 +186,10 @@ if ($nvccExe) {
 
 if (-not $cudaFound) {
     Write-Log "--------------------------------- WARNING ---------------------------------" -Color Red
-    Write-Log "NVIDIA CUDA Toolkit v12.8 is not detected on your system." -Color Red
+    Write-Log "NVIDIA CUDA Toolkit v12.9 is not detected on your system." -Color Red
     Write-Log "It is required for building some modules and for full performance." -Color Yellow
     Write-Log "Please download and install it manually from this official link:" -Color Yellow
-    Write-Log "https://developer.nvidia.com/cuda-12-8-1-download-archive" -Color Cyan
+    Write-Log "https://developer.nvidia.com/cuda-12-9-1-download-archive" -Color Cyan
     Read-Host "`nAfter installation, please RESTART this script. Press Enter to continue without CUDA for now, or close this window to abort."
     Write-Log "---------------------------------------------------------------------------"
 }
@@ -256,8 +256,8 @@ Invoke-AndLog "git" "config --global --add safe.directory `"$comfyPath`""
 # --- Étape 4: Installation des dépendances dans le Venv ---
 Write-Log "`nStep 4: Installing all Python dependencies into the venv..." -Color Yellow
 Invoke-AndLog "$venvPython" "-m pip install --upgrade pip wheel"
-Write-Log "  - Installing torch torchvision torchaudio for CUDA 12.8..."
-Invoke-AndLog "$venvPython" "-m pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu128"
+Write-Log "  - Installing torch torchvision torchaudio for CUDA 12.9..."
+Invoke-AndLog "$venvPython" "-m pip install --pre torch==2.8.0.dev20250627 torchvision torchaudio --index-url https://download.pytorch.org/whl/nightly/cu129"
 Write-Log "  - Installing ComfyUI requirements..."
 Invoke-AndLog "$venvPython" "-m pip install -r `"$comfyPath\requirements.txt`""
 
@@ -346,38 +346,41 @@ Remove-Item $tritonWheel -ErrorAction SilentlyContinue
 
 # xformers
 Write-Log "  - Installing xformers..."
-Invoke-AndLog "$venvPython" "-m pip install -U xformers --index-url https://download.pytorch.org/whl/cu128"
-Write-Log "    - Applying xformers compatibility patch (renaming files)..."
-$xformersBaseDir = Join-Path $comfyPath "venv\Lib\site-packages\xformers"
-$dirsToProcess = @(
-    $xformersBaseDir,
-    (Join-Path $xformersBaseDir "flash_attn_3")
-)
-foreach ($dir in $dirsToProcess) {
-    Write-Log "      - Checking directory: $dir"
-    if (Test-Path $dir) {
-        $exactFilePath = Join-Path $dir "pyd"
-        if (Test-Path $exactFilePath) {
-            Write-Log "        - Found file named 'pyd'. Renaming to '_C.pyd'..." -Color Yellow
-            $newName = "_C.pyd"
-            try {
-                Rename-Item -Path $exactFilePath -NewName $newName -Force -ErrorAction Stop
-                Write-Log "        - SUCCESS: Renamed 'pyd' to '$newName'" -Color Green
-            } catch {
-                Write-Log "        - FAILED to rename. Error: $($_.Exception.Message)" -Color Red
-            }
-        } else {
-            $finalFilePath = Join-Path $dir "_C.pyd"
-            if (Test-Path $finalFilePath) {
-                Write-Log "        - File '_C.pyd' already exists. No action needed." -Color Green
-            } else {
-                Write-Log "        - No file named 'pyd' or '_C.pyd' found in this directory." -Color Gray
-            }
-        }
-    } else {
-        Write-Log "      - Directory not found. Skipping." -Color Gray
-    }
-}
+$xformersWheel = Join-Path $InstallPath "xformers-0.0.32+8ed0992c.d20250724-cp39-abi3-win_amd64.whl"
+Download-File -Uri "https://github.com/UmeAiRT/ComfyUI-Auto_installer/raw/refs/heads/main/whl/xformers-0.0.32+8ed0992c.d20250724-cp39-abi3-win_amd64.whl" -OutFile $xformersWheel
+Invoke-AndLog "$venvPython" "-m pip install `"$xformersWheel`""
+# Invoke-AndLog "$venvPython" "-m pip install -U xformers --index-url https://download.pytorch.org/whl/cu128"
+# Write-Log "    - Applying xformers compatibility patch (renaming files)..."
+# $xformersBaseDir = Join-Path $comfyPath "venv\Lib\site-packages\xformers"
+# $dirsToProcess = @(
+#     $xformersBaseDir,
+#     (Join-Path $xformersBaseDir "flash_attn_3")
+# )
+# foreach ($dir in $dirsToProcess) {
+#     Write-Log "      - Checking directory: $dir"
+#     if (Test-Path $dir) {
+#         $exactFilePath = Join-Path $dir "pyd"
+#         if (Test-Path $exactFilePath) {
+#             Write-Log "        - Found file named 'pyd'. Renaming to '_C.pyd'..." -Color Yellow
+#             $newName = "_C.pyd"
+#             try {
+#                 Rename-Item -Path $exactFilePath -NewName $newName -Force -ErrorAction Stop
+#                 Write-Log "        - SUCCESS: Renamed 'pyd' to '$newName'" -Color Green
+#             } catch {
+#                 Write-Log "        - FAILED to rename. Error: $($_.Exception.Message)" -Color Red
+#             }
+#         } else {
+#             $finalFilePath = Join-Path $dir "_C.pyd"
+#             if (Test-Path $finalFilePath) {
+#                 Write-Log "        - File '_C.pyd' already exists. No action needed." -Color Green
+#             } else {
+#                 Write-Log "        - No file named 'pyd' or '_C.pyd' found in this directory." -Color Gray
+#             }
+#         }
+#     } else {
+#         Write-Log "      - Directory not found. Skipping." -Color Gray
+#     }
+# }
 
 # SageAttention
 Write-Log "  - Installing SageAttention..."
