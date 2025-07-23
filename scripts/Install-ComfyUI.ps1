@@ -162,10 +162,10 @@ $asciiBanner = @'
 Write-Host $asciiBanner -ForegroundColor Cyan
 Write-Log "-------------------------------------------------------------------------------"
 Write-Log "                           ComfyUI - Auto-Installer                            " -Color Yellow
-Write-Log "                                  Version 3.0                                  " -Color White
+Write-Log "                                  Version 3.1                                  " -Color White
 Write-Log "-------------------------------------------------------------------------------"
 
-Write-Log "`nStep 0: Checking for CUDA 12.8 Toolkit..." -Color Yellow
+Write-Log "`nStep 0: Checking for CUDA 12.9 Toolkit..." -Color Yellow
 $cudaFound = $false
 $nvccExe = Get-Command nvcc -ErrorAction SilentlyContinue
 
@@ -349,6 +349,7 @@ Write-Log "  - Installing xformers..."
 $xformersWheel = Join-Path $InstallPath "xformers-0.0.32+8ed0992c.d20250724-cp39-abi3-win_amd64.whl"
 Download-File -Uri "https://github.com/UmeAiRT/ComfyUI-Auto_installer/raw/refs/heads/main/whl/xformers-0.0.32+8ed0992c.d20250724-cp39-abi3-win_amd64.whl" -OutFile $xformersWheel
 Invoke-AndLog "$venvPython" "-m pip install `"$xformersWheel`""
+Remove-Item $xformersWheel -ErrorAction SilentlyContinue
 # Invoke-AndLog "$venvPython" "-m pip install -U xformers --index-url https://download.pytorch.org/whl/cu128"
 # Write-Log "    - Applying xformers compatibility patch (renaming files)..."
 # $xformersBaseDir = Join-Path $comfyPath "venv\Lib\site-packages\xformers"
