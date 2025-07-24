@@ -258,7 +258,6 @@ Write-Log "`nStep 4: Installing all Python dependencies into the venv..." -Color
 Invoke-AndLog "$venvPython" "-m pip install --upgrade pip wheel"
 Write-Log "  - Installing torch torchvision torchaudio for CUDA 12.9..."
 Invoke-AndLog "$venvPython" "-m pip install --pre torch==2.8.0.dev20250627 torchvision torchaudio --index-url https://download.pytorch.org/whl/nightly/cu129"
-Invoke-AndLog "$venvPython" "-m pip install numpy==1.26.4 pandas"
 Write-Log "  - Installing ComfyUI requirements..."
 Invoke-AndLog "$venvPython" "-m pip install -r `"$comfyPath\requirements.txt`""
 Write-Log "  - Installing Nunchaku..."
@@ -407,6 +406,10 @@ $sageWheel = Join-Path $InstallPath "sageattention-2.2.0-cp312-cp312-win_amd64.w
 Download-File -Uri "https://github.com/UmeAiRT/ComfyUI-Auto_installer/raw/refs/heads/main/whl/sageattention-2.2.0-cp312-cp312-win_amd64.whl" -OutFile $sageWheel
 Invoke-AndLog "$venvPython" "-m pip install `"$sageWheel`""
 Remove-Item $sageWheel -ErrorAction SilentlyContinue
+
+Write-Log "  - Fixing Numpy..."
+Invoke-AndLog "$venvPython" "-m pip uninstall numpy pandas"
+Invoke-AndLog "$venvPython" "-m pip install numpy==1.26.4 pandas"
 
 # --- Étape 7: Téléchargement des Workflows et Settings ---
 Write-Log "`nStep 7: Downloading Workflows & Settings..." -Color Yellow
