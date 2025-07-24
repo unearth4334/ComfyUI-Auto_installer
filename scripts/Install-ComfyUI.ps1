@@ -423,6 +423,8 @@ $modelsPath = Join-Path $InstallPath "models"
 $checkpointsPath = Join-Path $modelsPath "checkpoints"
 New-Item -Path $modelsPath -ItemType Directory -Force | Out-Null
 New-Item -Path $checkpointsPath -ItemType Directory -Force | Out-Null
+$comfyuserPath = Join-Path $comfyPath "user"
+New-Item -Path $comfyuserPath -ItemType Directory -Force | Out-Null
 
 # --- Étape 9: Téléchargement optionnel des packs de modèles ---
 Write-Log "`nStep 9: Optional Model Pack Downloads..." -Color Yellow
