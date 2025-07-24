@@ -387,43 +387,10 @@ Invoke-AndLog "$venvPython" "-m pip install triton-windows"
 Remove-Item $tritonWheel -ErrorAction SilentlyContinue
 
 # xformers
-Write-Log "  - Installing xformers..."
-$xformersWheel = Join-Path $InstallPath "xformers-0.0.32+8ed0992c.d20250724-cp39-abi3-win_amd64.whl"
-Download-File -Uri "https://github.com/UmeAiRT/ComfyUI-Auto_installer/raw/refs/heads/main/whl/xformers-0.0.32+8ed0992c.d20250724-cp39-abi3-win_amd64.whl" -OutFile $xformersWheel
-Invoke-AndLog "$venvPython" "-m pip install `"$xformersWheel`""
-Remove-Item $xformersWheel -ErrorAction SilentlyContinue
-# Invoke-AndLog "$venvPython" "-m pip install -U xformers --index-url https://download.pytorch.org/whl/cu128"
-# Write-Log "    - Applying xformers compatibility patch (renaming files)..."
-# $xformersBaseDir = Join-Path $comfyPath "venv\Lib\site-packages\xformers"
-# $dirsToProcess = @(
-#     $xformersBaseDir,
-#     (Join-Path $xformersBaseDir "flash_attn_3")
-# )
-# foreach ($dir in $dirsToProcess) {
-#     Write-Log "      - Checking directory: $dir"
-#     if (Test-Path $dir) {
-#         $exactFilePath = Join-Path $dir "pyd"
-#         if (Test-Path $exactFilePath) {
-#             Write-Log "        - Found file named 'pyd'. Renaming to '_C.pyd'..." -Color Yellow
-#             $newName = "_C.pyd"
-#             try {
-#                 Rename-Item -Path $exactFilePath -NewName $newName -Force -ErrorAction Stop
-#                 Write-Log "        - SUCCESS: Renamed 'pyd' to '$newName'" -Color Green
-#             } catch {
-#                 Write-Log "        - FAILED to rename. Error: $($_.Exception.Message)" -Color Red
-#             }
-#         } else {
-#             $finalFilePath = Join-Path $dir "_C.pyd"
-#             if (Test-Path $finalFilePath) {
-#                 Write-Log "        - File '_C.pyd' already exists. No action needed." -Color Green
-#             } else {
-#                 Write-Log "        - No file named 'pyd' or '_C.pyd' found in this directory." -Color Gray
-#             }
-#         }
-#     } else {
-#         Write-Log "      - Directory not found. Skipping." -Color Gray
-#     }
-# }
+Write-Log "  - Installing xformers from source... (This is the longest step, please be patient)"
+$env:FORCE_CUDA = "1"
+Invoke-AndLog "$venvPython" "-m pip install git+https://github.com/facebookresearch/xformers.git@main#egg=xformers"
+$env:FORCE_CUDA = $null
 
 # SageAttention
 Write-Log "  - Installing SageAttention... (This may take several minutes)"
