@@ -401,11 +401,18 @@ Remove-Item $xformersWheel -ErrorAction SilentlyContinue
 # }
 
 # SageAttention
-Write-Log "  - Installing SageAttention..."
-$sageWheel = Join-Path $InstallPath "sageattention-2.2.0-cp312-cp312-win_amd64.whl"
-Download-File -Uri "https://github.com/UmeAiRT/ComfyUI-Auto_installer/raw/refs/heads/main/whl/sageattention-2.2.0-cp312-cp312-win_amd64.whl" -OutFile $sageWheel
-Invoke-AndLog "$venvPython" "-m pip install `"$sageWheel`""
-Remove-Item $sageWheel -ErrorAction SilentlyContinue
+Write-Log "  - Installing SageAttention... (may take several minutes)"
+$clonePath = Join-Path $InstallPath "SageAttention"
+$repoUrl = "https://github.com/thu-ml/SageAttention"
+Invoke-AndLog "git" "clone $repoUrl `"$clonePath`""
+$setupPyPath = Join-Path $clonePath "setup.py"
+Invoke-AndLog "$venvPython" "`"$setupPyPath`" install"
+Remove-Item $clonePath -Recurse -Force -ErrorAction SilentlyContinue
+
+# $sageWheel = Join-Path $InstallPath "sageattention-2.2.0-cp312-cp312-win_amd64.whl"
+# Download-File -Uri "https://github.com/UmeAiRT/ComfyUI-Auto_installer/raw/refs/heads/main/whl/sageattention-2.2.0-cp312-cp312-win_amd64.whl" -OutFile $sageWheel
+# Invoke-AndLog "$venvPython" "-m pip install `"$sageWheel`""
+# Remove-Item $sageWheel -ErrorAction SilentlyContinue
 
 Write-Log "  - Fixing Numpy..."
 Invoke-AndLog "$venvPython" @('-m', 'pip', 'uninstall', 'numpy', 'pandas', '--yes')
