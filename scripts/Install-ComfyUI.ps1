@@ -273,7 +273,7 @@ Write-Log "  - Installing Nunchaku..."
 $insightfaceWheel = Join-Path $InstallPath "insightface-0.7.3-cp312-cp312-win_amd64.whl"
 Download-File -Uri "https://github.com/UmeAiRT/ComfyUI-Auto_installer/raw/refs/heads/main/whl/insightface-0.7.3-cp312-cp312-win_amd64.whl" -OutFile $insightfaceWheel
 Invoke-AndLog "$venvPython" "-m pip install `"$insightfaceWheel`""
-Remove-Item $nunchakuWheel -ErrorAction SilentlyContinue
+Remove-Item $insightfaceWheel -ErrorAction SilentlyContinue
 Write-Log "  - Installing onnxruntime..."
 Invoke-AndLog "$venvPython" "-m pip install onnxruntime"
 Invoke-AndLog "$venvPython" "-m pip install onnxruntime-gpu"
