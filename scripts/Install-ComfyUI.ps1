@@ -265,6 +265,18 @@ $nunchakuWheel = Join-Path $InstallPath "nunchaku-0.3.1+torch2.8-cp312-cp312-win
 Download-File -Uri "https://github.com/nunchaku-tech/nunchaku/releases/download/v0.3.1/nunchaku-0.3.1+torch2.8-cp312-cp312-win_amd64.whl" -OutFile $nunchakuWheel
 Invoke-AndLog "$venvPython" "-m pip install `"$nunchakuWheel`""
 Remove-Item $nunchakuWheel -ErrorAction SilentlyContinue
+Write-Log "  - Installing facexlib..."
+Invoke-AndLog "$venvPython" "-m pip install facexlib"
+Write-Log "  - Installing cython..."
+Invoke-AndLog "$venvPython" "-m pip install cython"
+Write-Log "  - Installing Nunchaku..."
+$insightfaceWheel = Join-Path $InstallPath "insightface-0.7.3-cp312-cp312-win_amd64.whl"
+Download-File -Uri "https://github.com/UmeAiRT/ComfyUI-Auto_installer/raw/refs/heads/main/whl/insightface-0.7.3-cp312-cp312-win_amd64.whl" -OutFile $insightfaceWheel
+Invoke-AndLog "$venvPython" "-m pip install `"$insightfaceWheel`""
+Remove-Item $nunchakuWheel -ErrorAction SilentlyContinue
+Write-Log "  - Installing onnxruntime..."
+Invoke-AndLog "$venvPython" "-m pip install onnxruntime"
+Invoke-AndLog "$venvPython" "-m pip install onnxruntime-gpu"
 
 # --- Étape 5: Installation des Custom Nodes ---
 Write-Log "`nStep 5: Installing custom nodes from CSV list..." -Color Yellow
