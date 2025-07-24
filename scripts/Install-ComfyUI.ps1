@@ -195,7 +195,7 @@ if (-not $cudaFound) {
 }
 
 # --- Étape 1: Vérification et Installation de Python ---
-Write-Log "Step 1: Checking for Python 3.12..." -Color Yellow
+Write-Log "`nStep 1: Checking for Python 3.12..." -Color Yellow
 $pythonExe = Get-Command python -ErrorAction SilentlyContinue
 $pythonVersionOK = $false
 if ($pythonExe) {
@@ -260,6 +260,11 @@ Write-Log "  - Installing torch torchvision torchaudio for CUDA 12.9..."
 Invoke-AndLog "$venvPython" "-m pip install --pre torch==2.8.0.dev20250627 torchvision torchaudio --index-url https://download.pytorch.org/whl/nightly/cu129"
 Write-Log "  - Installing ComfyUI requirements..."
 Invoke-AndLog "$venvPython" "-m pip install -r `"$comfyPath\requirements.txt`""
+Write-Log "  - Installing Nunchaku..."
+$nunchakuWheel = Join-Path $InstallPath "nunchaku-0.3.1+torch2.8-cp312-cp312-win_amd64.whl"
+Download-File -Uri "https://github.com/nunchaku-tech/nunchaku/releases/download/v0.3.1/nunchaku-0.3.1+torch2.8-cp312-cp312-win_amd64.whl" -OutFile $nunchakuWheel
+Invoke-AndLog "$venvPython" "-m pip install `"$nunchakuWheel`""
+Remove-Item $nunchakuWheel -ErrorAction SilentlyContinue
 
 # --- Étape 5: Installation des Custom Nodes ---
 Write-Log "`nStep 5: Installing custom nodes from CSV list..." -Color Yellow
