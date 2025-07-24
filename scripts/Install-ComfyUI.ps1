@@ -412,7 +412,7 @@ Invoke-AndLog "$venvPython" @('-m', 'pip', 'uninstall', 'numpy', 'pandas', '--ye
 Invoke-AndLog "$venvPython" "-m pip install numpy==1.26.4 pandas"
 
 Write-Log "  - Installing Apex..."
-Invoke-AndLog "$venvPython" "-m pip install --no-cache-dir --verbose git+https://github.com/NVIDIA/apex.git --global-option="build_ext" --global-option="--cpp_ext" --global-option="--cuda_ext" --global-option="-Xcompiler" --global-option="/D_ENABLE_EXTENDED_ALIGNED_STORAGE" --no-build-isolation"
+Invoke-AndLog "$venvPython" "-m pip install --no-build-isolation --no-cache-dir --verbose git+https://github.com/NVIDIA/apex.git --global-option="build_ext" --global-option="--cpp_ext" --global-option="--cuda_ext" --global-option="-Xcompiler" --global-option="/D_ENABLE_EXTENDED_ALIGNED_STORAGE" "
 
 # --- Étape 7: Téléchargement des Workflows et Settings ---
 Write-Log "`nStep 7: Downloading Workflows & Settings..." -Color Yellow
