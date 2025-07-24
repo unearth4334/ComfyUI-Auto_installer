@@ -20,7 +20,6 @@ ComfyUI-Image-Saver,https://github.com/alexopus/ComfyUI-Image-Saver.git,,require
 ComfyUI_UltimateSDUpscale,https://github.com/ssitu/ComfyUI_UltimateSDUpscale.git,,
 comfyui_controlnet_aux,https://github.com/Fannovel16/comfyui_controlnet_aux.git,,requirements.txt
 x-flux-comfyui,https://github.com/XLabs-AI/x-flux-comfyui.git,,requirements.txt
-ComfyUI-RMBG,https://github.com/1038lab/ComfyUI-RMBG.git,,requirements.txt
 ComfyUI-Detail-Daemon,https://github.com/Jonseed/ComfyUI-Detail-Daemon.git,,requirements.txt
 ComfyUI-TeaCache,https://github.com/welltop-cn/ComfyUI-TeaCache.git,,requirements.txt
 ComfyUI-Crystools,https://github.com/crystian/ComfyUI-Crystools.git,,requirements.txt
