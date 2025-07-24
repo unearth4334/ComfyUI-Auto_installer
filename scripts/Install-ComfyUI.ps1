@@ -408,7 +408,7 @@ Invoke-AndLog "$venvPython" "-m pip install `"$sageWheel`""
 Remove-Item $sageWheel -ErrorAction SilentlyContinue
 
 Write-Log "  - Fixing Numpy..."
-Invoke-AndLog "$venvPython" "-m pip uninstall numpy pandas -y"
+$venvPython -m pip uninstall numpy pandas --yes
 Invoke-AndLog "$venvPython" "-m pip install numpy==1.26.4 pandas"
 
 # --- Étape 7: Téléchargement des Workflows et Settings ---
