@@ -387,9 +387,9 @@ Invoke-AndLog "$venvPython" "-m pip install triton-windows"
 Remove-Item $tritonWheel -ErrorAction SilentlyContinue
 
 # xformers
-Write-Log "  - Installing xformers from source... (This is the longest step, please be patient)"
+Write-Log "  - Installing xformers from source... (This may take several minutes)"
 $env:FORCE_CUDA = "1"
-Invoke-AndLog "$venvPython" "-m pip install git+https://github.com/facebookresearch/xformers.git@main#egg=xformers"
+Invoke-AndLog "$venvPython" "-m pip install --no-build-isolation --verbose git+https://github.com/facebookresearch/xformers.git@main#egg=xformers"
 $env:FORCE_CUDA = $null
 
 # SageAttention
