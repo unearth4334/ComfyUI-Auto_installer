@@ -416,6 +416,10 @@ $workflowCloneDest = Join-Path $workflowPath "UmeAiRT-Workflow"
 $settingsFilePath = Join-Path $userDefaultPath "comfy.settings.json"
 Download-File -Uri "https://huggingface.co/UmeAiRT/ComfyUI-Auto_installer/resolve/main/others/comfy.settings.json" -OutFile $settingsFilePath
 if (-not (Test-Path $workflowCloneDest)) { Invoke-AndLog "git" "clone https://github.com/UmeAiRT/ComfyUI-Workflows `"$workflowCloneDest`"" }
+$modelsPath = Join-Path $InstallPath "models"
+$checkpointsPath = Join-Path $modelsPath "checkpoints"
+New-Item -Path $modelsPath -ItemType Directory -Force | Out-Null
+New-Item -Path $checkpointsPath -ItemType Directory -Force | Out-Null
 
 # --- Étape 9: Téléchargement optionnel des packs de modèles ---
 Write-Log "`nStep 9: Optional Model Pack Downloads..." -Color Yellow
