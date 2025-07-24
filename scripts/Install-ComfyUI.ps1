@@ -135,6 +135,30 @@ function Install-Aria2-Binary {
     Write-Log "--- Aria2 binary installation complete ---" -Color Magenta
 }
 
+function Install-Ninja-Binary {
+    Write-Log "--- Starting Ninja binary installation ---" -Color Magenta
+    $destFolder = "C:\Tools\ninja"
+    if (-not (Test-Path $destFolder)) { New-Item -ItemType Directory -Force -Path $destFolder | Out-Null }
+    
+    $ninjaUrl = "https://github.com/ninja-build/ninja/releases/download/v1.13.1/ninja-win.zip"
+    $zipPath  = Join-Path $env:TEMP "ninja_temp.zip"
+    
+    Download-File -Uri $ninjaUrl -OutFile $zipPath
+    Write-Log "Extracting zip file to $destFolder..."
+    Expand-Archive -Path $zipPath -DestinationPath $destFolder -Force
+    
+    $envScope = "User"
+    $oldPath = [System.Environment]::GetEnvironmentVariable("Path", $envScope)
+    if ($oldPath -notlike "*$destFolder*") {
+        Write-Log "Adding '$destFolder' to user PATH..."
+        $newPath = $oldPath + ";$destFolder"
+        [System.Environment]::SetEnvironmentVariable("Path", $newPath, $envScope)
+        $env:Path = $newPath
+        Write-Log "PATH updated. Ninja will be available immediately."
+    }
+    Write-Log "--- Ninja binary installation complete ---" -Color Magenta
+}
+
 function Refresh-Path {
     Write-Log "  - Refreshing PATH environment variable for the current session..." -Color DarkGray
     # Récupère le PATH système et utilisateur depuis le registre (la version la plus à jour)
@@ -223,6 +247,7 @@ if (-not $pythonVersionOK) {
 # --- Étape 2: Installation des dépendances (Aria2, 7-Zip, Git) ---
 Write-Log "`nStep 2: Checking for required tools..." -Color Yellow
 if (-not (Get-Command 'aria2c' -ErrorAction SilentlyContinue)) { Install-Aria2-Binary } else { Write-Log "  - Aria2 is already installed." -Color Green }
+if (-not (Get-Command 'ninja' -ErrorAction SilentlyContinue)) { Install-Ninja-Binary } else { Write-Log "  - Ninja is already installed." -Color Green }
 if (-not (Test-Path $sevenZipPath)) {
     $sevenZipInstaller = Join-Path $env:TEMP "7z-installer.exe"; Download-File -Uri "https://www.7-zip.org/a/7z2201-x64.exe" -OutFile $sevenZipInstaller; Start-Process -FilePath $sevenZipInstaller -ArgumentList "/S" -Wait; Remove-Item $sevenZipInstaller; Refresh-Path
 } else { Write-Log "  - 7-Zip is already installed." -Color Green }
@@ -401,18 +426,12 @@ Remove-Item $xformersWheel -ErrorAction SilentlyContinue
 # }
 
 # SageAttention
-Write-Log "  - Installing SageAttention... (may take several minutes)"
-$clonePath = Join-Path $InstallPath "SageAttention"
+Write-Log "  - Installing SageAttention... (This may take several minutes)"
+$clonePath = Join-Path $InstallPath "SageAttention_temp"
 $repoUrl = "https://github.com/thu-ml/SageAttention"
 Invoke-AndLog "git" "clone $repoUrl `"$clonePath`""
-$setupPyPath = Join-Path $clonePath "setup.py"
-Invoke-AndLog "$venvPython" "`"$setupPyPath`" install"
+Invoke-AndLog "$venvPython" "-m pip install --no-build-isolation --verbose `"$clonePath`""
 Remove-Item $clonePath -Recurse -Force -ErrorAction SilentlyContinue
-
-# $sageWheel = Join-Path $InstallPath "sageattention-2.2.0-cp312-cp312-win_amd64.whl"
-# Download-File -Uri "https://github.com/UmeAiRT/ComfyUI-Auto_installer/raw/refs/heads/main/whl/sageattention-2.2.0-cp312-cp312-win_amd64.whl" -OutFile $sageWheel
-# Invoke-AndLog "$venvPython" "-m pip install `"$sageWheel`""
-# Remove-Item $sageWheel -ErrorAction SilentlyContinue
 
 Write-Log "  - Fixing Numpy..."
 Invoke-AndLog "$venvPython" @('-m', 'pip', 'uninstall', 'numpy', 'pandas', '--yes')
