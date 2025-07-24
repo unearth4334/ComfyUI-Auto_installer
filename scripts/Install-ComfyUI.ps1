@@ -258,6 +258,7 @@ Write-Log "`nStep 4: Installing all Python dependencies into the venv..." -Color
 Invoke-AndLog "$venvPython" "-m pip install --upgrade pip wheel"
 Write-Log "  - Installing torch torchvision torchaudio for CUDA 12.9..."
 Invoke-AndLog "$venvPython" "-m pip install --pre torch==2.8.0.dev20250627 torchvision torchaudio --index-url https://download.pytorch.org/whl/nightly/cu129"
+Invoke-AndLog "$venvPython" "-m pip install numpy==1.26.4 pandas"
 Write-Log "  - Installing ComfyUI requirements..."
 Invoke-AndLog "$venvPython" "-m pip install -r `"$comfyPath\requirements.txt`""
 Write-Log "  - Installing Nunchaku..."
