@@ -148,6 +148,9 @@ if (Test-Path $customNodesPath) {
         Invoke-Pip-Install -RequirementsPath (Join-Path $dir.FullName "requirements.txt")
     }
 }
+Write-Log "  - Fixing Numpy..."
+Invoke-AndLog "$venvPython" @('-m', 'pip', 'uninstall', 'numpy', 'pandas', '--yes')
+Invoke-AndLog "$venvPython" "-m pip install numpy==1.26.4 pandas"
 
 Write-Log "==============================================================================="
 Write-Log "Update process complete!" -Color Yellow
