@@ -65,7 +65,36 @@ function Invoke-Pip-Install {
         }
     }
 }
+function Invoke-AndLog {
+    param(
+        [string]$File,
+        [string]$Arguments
+    )
+    
+    # Chemin vers un fichier de log temporaire unique
+    $tempLogFile = Join-Path $env:TEMP ([System.Guid]::NewGuid().ToString() + ".tmp")
 
+    try {
+        # Exécute la commande et redirige TOUTE sa sortie vers le fichier temporaire
+        $commandToRun = "`"$File`" $Arguments"
+        $cmdArguments = "/C `"$commandToRun > `"`"$tempLogFile`"`" 2>&1`""
+        Start-Process -FilePath "cmd.exe" -ArgumentList $cmdArguments -Wait -WindowStyle Hidden
+        
+        # Une fois la commande terminée, on lit le fichier temporaire
+        if (Test-Path $tempLogFile) {
+            $output = Get-Content $tempLogFile
+            # Et on l'ajoute au log principal en toute sécurité
+            Add-Content -Path $logFile -Value $output
+        }
+    } catch {
+        Write-Log "FATAL ERROR trying to execute command: $commandToRun" -Color Red
+    } finally {
+        # On s'assure que le fichier temporaire est toujours supprimé
+        if (Test-Path $tempLogFile) {
+            Remove-Item $tempLogFile
+        }
+    }
+}
 #===========================================================================
 # SECTION 2: UPDATE PROCESS
 #===========================================================================
