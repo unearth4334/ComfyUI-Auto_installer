@@ -294,7 +294,7 @@ Write-Log "  - Installing facexlib..."
 Invoke-AndLog "$venvPython" "-m pip install facexlib"
 Write-Log "  - Installing cython..."
 Invoke-AndLog "$venvPython" "-m pip install cython"
-Write-Log "  - Installing Nunchaku..."
+Write-Log "  - Installing insightface..."
 $insightfaceWheel = Join-Path $InstallPath "insightface-0.7.3-cp312-cp312-win_amd64.whl"
 Download-File -Uri "https://github.com/UmeAiRT/ComfyUI-Auto_installer/raw/refs/heads/main/whl/insightface-0.7.3-cp312-cp312-win_amd64.whl" -OutFile $insightfaceWheel
 Invoke-AndLog "$venvPython" "-m pip install `"$insightfaceWheel`""
