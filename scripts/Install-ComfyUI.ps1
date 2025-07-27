@@ -404,6 +404,9 @@ Write-Log "  - Fixing Numpy..."
 Invoke-AndLog "$venvPython" @('-m', 'pip', 'uninstall', 'numpy', 'pandas', '--yes')
 Invoke-AndLog "$venvPython" "-m pip install numpy==1.26.4 pandas"
 
+Write-Log "  - Fixing transformers..."
+Invoke-AndLog "$venvPython" "-m pip install --upgrade transformers==4.49.0"
+
 Write-Log "  - Installing Apex..."
 Invoke-AndLog "$venvPython" "-m pip install --no-build-isolation --no-cache-dir --verbose git+https://github.com/NVIDIA/apex.git --global-option="build_ext" --global-option="--cpp_ext" --global-option="--cuda_ext" --global-option="-Xcompiler" --global-option="/D_ENABLE_EXTENDED_ALIGNED_STORAGE" "
 
