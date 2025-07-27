@@ -110,7 +110,7 @@ Invoke-Git-Pull -DirectoryPath $comfyPath
 # --- 2. Update and Install Custom Nodes ---
 Write-Log "`n[2/4] Updating and Installing Custom Nodes..." -Color Green
 
-$csvUrl = "https://huggingface.co/UmeAiRT/ComfyUI-Auto_installer/resolve/main/scripts/Nodes_installer/custom_nodes.csv"
+$csvUrl = "https://github.com/UmeAiRT/ComfyUI-Auto_installer/raw/refs/heads/main/csv/custom_nodes.csv"
 $scriptsFolder = Join-Path $InstallPath "scripts"
 $csvPath = Join-Path $scriptsFolder "custom_nodes.csv"
 
