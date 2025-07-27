@@ -33,3 +33,4 @@ ComfyUI-wanBlockswap,https://github.com/orssorbit/ComfyUI-wanBlockswap,,
 Derfuu_ComfyUI_ModdedNodes,https://github.com/Derfuu/Derfuu_ComfyUI_ModdedNodes,,
 ComfyUI_LayerStyle,https://github.com/chflame163/ComfyUI_LayerStyle,,requirements.txt
 ComfyUI-MagCache,https://github.com/Zehong-Ma/ComfyUI-MagCache,,requirements.txt
+ComfyUI-Upscaler-Tensorrt,https://github.com/yuvraj108c/ComfyUI-Upscaler-Tensorrt,,requirements.txt

@@ -345,6 +345,7 @@ if (-not (Test-Path $csvPath)) {
         }
     }
 }
+Remove-Item $csvPath -ErrorAction SilentlyContinue
 
 # --- Étape 6: Installation des modules Python supplémentaires ---
 Write-Log "`nStep 6: Installing supplementary modules..." -Color Yellow
