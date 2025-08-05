@@ -181,6 +181,9 @@ Write-Log "  - Fixing Numpy..."
 Invoke-AndLog "$venvPython" @('-m', 'pip', 'uninstall', 'numpy', 'pandas', '--yes')
 Invoke-AndLog "$venvPython" "-m pip install numpy==1.26.4 pandas"
 
+Write-Log "  - Fixing transformers..."
+Invoke-AndLog "$venvPython" "-m pip install --upgrade transformers==4.49.0"
+
 Write-Log "==============================================================================="
 Write-Log "Update process complete!" -Color Yellow
 Write-Log "==============================================================================="
