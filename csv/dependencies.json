@@ -75,17 +75,17 @@
       {
         "name": "xformers",
         "url": "https://github.com/facebookresearch/xformers.git",
-        "commit": "4834B4152B3A449B551AAB5F87723737320D5D4E"
+        "commit": "main"
       },
       {
         "name": "SageAttention",
         "url": "https://github.com/thu-ml/SageAttention",
-        "commit": "3a33598686e54555b774435ceb070444369a19e5"
+        "commit": "main"
       },
       {
         "name": "apex",
         "url": "https://github.com/NVIDIA/apex.git",
-        "commit": "f4f08006f714278477218320b332d84a2a16c841",
+        "commit": "main",
         "install_options": "--no-build-isolation --no-cache-dir --verbose --global-option=\"build_ext\" --global-option=\"--cpp_ext\" --global-option=\"--cuda_ext\" --global-option=\"-Xcompiler\" --global-option=\"/D_ENABLE_EXTENDED_ALIGNED_STORAGE\""
       }
     ]
