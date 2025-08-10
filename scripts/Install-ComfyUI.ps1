@@ -21,7 +21,7 @@ $logPath = Join-Path $InstallPath "logs"
 $logFile = Join-Path $logPath "install_log.txt"
 [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
 
-$dependenciesFile = Join-Path $PSScriptRoot "dependencies.json"
+$dependenciesFile = Join-Path (Split-Path -Path $MyInvocation.MyCommand.Definition -Parent) "dependencies.json"
 if (-not (Test-Path $dependenciesFile)) { Write-Host "FATAL: dependencies.json not found..." -ForegroundColor Red; Read-Host; exit 1 }
 $dependencies = Get-Content -Raw -Path $dependenciesFile | ConvertFrom-Json
 if (-not (Test-Path $logPath)) { New-Item -ItemType Directory -Force -Path $logPath | Out-Null }
@@ -79,7 +79,20 @@ foreach ($toolProperty in $dependencies.tools.PSObject.Properties) { $toolName =
 
 # --- Step 4: Clone ComfyUI and create Venv ---
 Write-Log "Cloning ComfyUI & Creating Virtual Environment" -Level 0
-if (-not (Test-Path $comfyPath)) { Write-Log "Cloning ComfyUI repository..." -Level 1; Invoke-AndLog "git" "clone $($dependencies.repositories.comfyui.url) `"$comfyPath`"" } else { Write-Log "ComfyUI directory already exists" -Level 1 -Color Green }
+if (-not (Test-Path $comfyPath)) {
+    Write-Log "Cloning ComfyUI repository from $($dependencies.repositories.comfyui.url)..." -Level 1
+    $cloneArgs = "clone $($dependencies.repositories.comfyui.url) `"$comfyPath`""
+    Invoke-AndLog "git" $cloneArgs
+
+    # On vérifie si le clonage a réussi avant de continuer
+    if (-not (Test-Path $comfyPath)) {
+        Write-Log "FATAL: ComfyUI cloning failed. The directory was not created. Please check the logs." -Level 0 -Color Red
+        Read-Host "Press Enter to exit."
+        exit 1
+    }
+} else {
+    Write-Log "ComfyUI directory already exists" -Level 1 -Color Green
+}
 if (-not (Test-Path (Join-Path $comfyPath "venv"))) { Write-Log "Creating Python virtual environment..." -Level 1; Push-Location $comfyPath; $commandParts = $pythonCommandToUse.Split(' ', 2); $executable = $commandParts[0]; $baseArguments = if ($commandParts.Length -gt 1) { $commandParts[1] } else { "" }; Invoke-AndLog $executable "$baseArguments -m venv venv"; Pop-Location; Write-Log "Venv created successfully" -Level 2 -Color Green } else { Write-Log "Venv already exists" -Level 1 -Color Green }
 Invoke-AndLog "git" "config --global --add safe.directory `"$comfyPath`""
 
