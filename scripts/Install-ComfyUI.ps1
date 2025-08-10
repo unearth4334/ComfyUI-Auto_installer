@@ -393,6 +393,17 @@ foreach ($repo in $dependencies.pip_packages.git_repos) {
     }
 
     Invoke-AndLog "$venvPython" $pipArgs
+
+    # REMETTEZ CE BLOC DE NETTOYAGE
+    # --- Nettoyage des variables d'environnement ---
+    if ($useOptimizations) {
+        $env:XFORMERS_BUILD_TYPE = $null
+        $env:MAX_JOBS = $null
+        Write-Log "      -> Build optimizations DISABLED" -Color DarkGray
+    }
+    if ($repo.name -eq "xformers") {
+        $env:FORCE_CUDA = $null
+    }
 }
 
 # --- Step 6: Install VS Build Tools ---
