@@ -136,7 +136,7 @@ $asciiBanner = @'
 Write-Host $asciiBanner -ForegroundColor Cyan
 Write-Log "-------------------------------------------------------------------------------"
 Write-Log "                           ComfyUI - Auto-Installer                            " -Color Yellow
-Write-Log "                                  Version 3.2 (Refactored)                     " -Color White
+Write-Log "                                 Version 3.2                                   " -Color White
 Write-Log "-------------------------------------------------------------------------------"
 
 # --- Step 0: CUDA Check (Same as before) ---
@@ -343,19 +343,21 @@ if (Test-Path $vsInstallerPath) {
 # --- Step 7: Download Workflows & Settings ---
 Write-Log "`nStep 7: Downloading Workflows & Settings..." -Color Yellow
 $settingsFile = $dependencies.files.comfy_settings
-$settingsDest = Join-Path $comfyPath $settingsFile.destination
+$settingsDest = Join-Path $InstallPath $settingsFile.destination
 $settingsDir = Split-Path $settingsDest -Parent
 if (-not (Test-Path $settingsDir)) { New-Item -Path $settingsDir -ItemType Directory -Force | Out-Null }
 Download-File -Uri $settingsFile.url -OutFile $settingsDest
 
 $workflowRepo = $dependencies.repositories.workflows
-$workflowCloneDest = Join-Path $comfyPath "user\default\workflows\UmeAiRT-Workflow"
+$workflowCloneDest = Join-Path $InstallPath "user\default\workflows\UmeAiRT-Workflow"
 if (-not (Test-Path $workflowCloneDest)) { 
     Invoke-AndLog "git" "clone $workflowRepo `"$workflowCloneDest`"" 
 }
 
 # --- Step 8: Optional Model Pack Downloads ---
 Write-Log "`nStep 8: Optional Model Pack Downloads..." -Color Yellow
+$ModelsSource = Join-Path $comfyPath "models"
+Copy-Item -Path $ModelsSource -Destination $InstallPath -Recurse
 # This section remains largely the same as it calls other scripts
 $modelPacks = @(
     @{Name="FLUX"; ScriptName="Download-FLUX-Models.ps1"},
