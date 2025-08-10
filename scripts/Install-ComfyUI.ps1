@@ -335,7 +335,7 @@ if (-not (Test-Path $csvPath)) {
     Write-Log "  - ERROR: Could not download custom nodes list. Skipping." -Color Red
 } else {
     $customNodes = Import-Csv -Path $csvPath
-    $customNodesPath = Join-Path $comfyPath "custom_nodes" # Corrected path
+    $customNodesPath = Join-Path $InstallPath "custom_nodes" # Corrected path
 
     foreach ($node in $customNodes) {
         $nodeName = $node.Name
