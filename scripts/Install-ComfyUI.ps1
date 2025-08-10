@@ -1,26 +1,29 @@
 #Requires -RunAsAdministrator
 
-# --- Script Parameters ---
-param(
-    [string]$InstallPath = $PSScriptRoot
-)
+<#
+.SYNOPSIS
+    An automated installer for ComfyUI and its dependencies.
+.DESCRIPTION
+    This script streamlines the setup of ComfyUI, including Python, Git,
+    all required Python packages, custom nodes, and optional models.
+#>
 
 #===========================================================================
 # SECTION 1: SCRIPT CONFIGURATION & HELPER FUNCTIONS
 #===========================================================================
 
-# --- Clean up paths and set security protocol ---
-$InstallPath = $InstallPath.Trim('"')
-[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
-
-# --- Define core paths ---
+# --- Paths and Configuration ---
+param(
+    [string]$InstallPath = (Split-Path -Path $PSScriptRoot -Parent)
+)
 $comfyPath = Join-Path $InstallPath "ComfyUI"
+$venvPython = Join-Path $comfyPath "venv\Scripts\python.exe"
 $logPath = Join-Path $InstallPath "logs"
 $logFile = Join-Path $logPath "install_log.txt"
-$venvPython = Join-Path $comfyPath "venv\Scripts\python.exe"
+[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
 
 # --- Load Dependencies from JSON ---
-$dependenciesFile = Join-Path $InstallPath "scripts\dependencies.json"
+$dependenciesFile = Join-Path $PSScriptRoot "dependencies.json"
 if (-not (Test-Path $dependenciesFile)) {
     Write-Host "FATAL: dependencies.json not found at '$dependenciesFile'. Cannot proceed." -ForegroundColor Red
     Read-Host "Press Enter to exit."
@@ -28,18 +31,48 @@ if (-not (Test-Path $dependenciesFile)) {
 }
 $dependencies = Get-Content -Raw -Path $dependenciesFile | ConvertFrom-Json
 
-# --- Create Log Directory ---
-if (-not (Test-Path $logPath)) {
-    New-Item -ItemType Directory -Force -Path $logPath | Out-Null
-}
+if (-not (Test-Path $logPath)) { New-Item -ItemType Directory -Force -Path $logPath | Out-Null }
 
-# --- Helper functions ---
+# --- Helper Functions ---
 function Write-Log {
-    param([string]$Message, [string]$Color = "White")
+    param(
+        [string]$Message,
+        [int]$Level = 1, # Default to a sub-step
+        [string]$Color = "Default"
+    )
+
+    $prefix = ""
+    $defaultColor = "White"
+
+    switch ($Level) {
+        0 { # Main Step
+            $global:currentStep++
+            $separator = "=" * ($Message.Length + 4)
+            $prefix = "`n$separator`n[Step $($global:currentStep)/$($global:totalSteps)] $Message`n$separator`n"
+            $defaultColor = "Yellow"
+        }
+        1 { # Sub-step
+            $prefix = "  - "
+            $defaultColor = "White"
+        }
+        2 { # Detail
+            $prefix = "      -> "
+            $defaultColor = "Cyan"
+        }
+        3 { # Debug/Info
+            $prefix = "         [INFO] "
+            $defaultColor = "DarkGray"
+        }
+    }
+
+    if ($Color -eq "Default") { $Color = $defaultColor }
+
     $timestamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
-    $formattedMessage = "[$timestamp] $Message"
-    Write-Host $Message -ForegroundColor $Color
-    Add-Content -Path $logFile -Value $formattedMessage
+    $logMessage = "[$timestamp] $($prefix.Trim()) $Message"
+    $consoleMessage = "$prefix$Message"
+    
+    Write-Host $consoleMessage -ForegroundColor $Color
+    Add-Content -Path $logFile -Value $logMessage
 }
 
 function Invoke-AndLog {
@@ -129,6 +162,8 @@ function Refresh-Path {
 #===========================================================================
 # SECTION 2: MAIN SCRIPT EXECUTION
 #===========================================================================
+$global:totalSteps = 9
+$global:currentStep = 0
 # NOUVEAU : Calcul décomposé pour une robustesse maximale
 Write-Log "--- Calculating optimal jobs ---" -Color DarkGray
 # LA CORRECTION DÉFINITIVE : On convertit la variable en nombre entier [int]
@@ -172,7 +207,7 @@ Write-Log "                                 Version 3.2                         
 Write-Log "-------------------------------------------------------------------------------"
 
 # --- Step 0: CUDA Check (Same as before) ---
-Write-Log "`nStep 0: Checking for CUDA 12.9 Toolkit..." -Color Yellow
+Write-Log "`nChecking for CUDA 12.9 Toolkit..." -Level 0
 # ... (This section doesn't depend on the JSON file, so it can remain as is)
 $cudaFound = $false
 $nvccExe = Get-Command nvcc -ErrorAction SilentlyContinue
@@ -180,7 +215,7 @@ $nvccExe = Get-Command nvcc -ErrorAction SilentlyContinue
 if ($nvccExe) {
     $versionOutput = (nvcc --version 2>&1)
     if ($versionOutput -join "`n" -like "*release 12.9*") {
-        Write-Log "  - Found CUDA Toolkit 12.9." -Color Green
+        Write-Log "  - Found CUDA Toolkit 12.9." -Level 1 -Color Green
         $cudaFound = $true
     } else {
         Write-Log "  - An incorrect version of CUDA Toolkit was found." -Color Yellow
@@ -202,7 +237,7 @@ if (-not $cudaFound) {
 
 
 # --- Step 1: Install Python ---
-Write-Log "`nStep 1: Checking for Python $($dependencies.tools.python.version)..." -Color Yellow
+Write-Log "`nChecking for Python $($dependencies.tools.python.version)..."  -Level 0
 
 # NOUVEAU: On va stocker la commande exacte (ex: "py -3.12" ou "python") pour plus tard.
 $pythonCommandToUse = $null 
@@ -250,7 +285,7 @@ if (-not $pythonCommandToUse) {
 }
 
 # --- Step 2: Install Required Tools ---
-Write-Log "`nStep 2: Checking for required tools..." -Color Yellow
+Write-Log "`nChecking for required tools..." -Level 0
 $gitTool = $dependencies.tools.git
 $sevenZipTool = $dependencies.tools.seven_zip
 $aria2Tool = $dependencies.tools.aria2
@@ -278,7 +313,7 @@ if (-not (Get-Command 'ccache' -ErrorAction SilentlyContinue)) {
     Write-Log "  - ccache is already installed." -Color Green
 }
 # --- Step 3: Clone ComfyUI and create Venv ---
-Write-Log "`nStep 3: Cloning ComfyUI and creating Virtual Environment..." -Color Yellow
+Write-Log "`nCloning ComfyUI and creating Virtual Environment..." -Level 0
 if (-not (Test-Path $comfyPath)) {
     Write-Log "  - Cloning ComfyUI repository..."
     Invoke-AndLog "git" "clone $($dependencies.repositories.comfy_ui) `"$comfyPath`""
@@ -306,7 +341,7 @@ if (-not (Test-Path (Join-Path $comfyPath "venv"))) {
 Invoke-AndLog "git" "config --global --add safe.directory `"$comfyPath`""
 
 # --- Step 4: Install Core Dependencies (Torch & ComfyUI) ---
-Write-Log "`nStep 4: Installing Core Dependencies (Torch & ComfyUI)..." -Color Yellow
+Write-Log "`nInstalling Core Dependencies (Torch & ComfyUI)..." -Level 0
 
 # Upgrade pip and wheel
 $pipUpgradePackages = $dependencies.pip_packages.upgrade -join " "
@@ -323,7 +358,7 @@ Invoke-AndLog "$venvPython" "-m pip install -r `"$comfyPath\$($dependencies.pip_
 
 
 # --- Step 5: Install Custom Nodes ---
-Write-Log "`nStep 5: Installing custom nodes and their dependencies..." -Color Yellow
+Write-Log "`nInstalling custom nodes and their dependencies..." -Level 0
 $csvUrl = $dependencies.files.custom_nodes_csv.url
 $csvPath = Join-Path $InstallPath $dependencies.files.custom_nodes_csv.destination
 Download-File -Uri $csvUrl -OutFile $csvPath
@@ -361,7 +396,7 @@ if (-not (Test-Path $csvPath)) {
 
 
 # --- Step 6: Install and Enforce Final Python Dependencies ---
-Write-Log "`nStep 6: Installing and Enforcing Final Python Dependencies..." -Color Yellow
+Write-Log "`nInstalling and Enforcing Final Python Dependencies..." -Level 0
 
 # Install standard packages from list
 $standardPackages = $dependencies.pip_packages.standard -join " "
@@ -437,8 +472,8 @@ foreach ($repo in $dependencies.pip_packages.git_repos) {
     }
 }
 
-# --- Step 6: Install VS Build Tools ---
-Write-Log "`nStep 6: Installing Visual Studio Build Tools..." -Color Yellow
+# --- Step 7: Install VS Build Tools ---
+Write-Log "`nInstalling Visual Studio Build Tools..." -Level 0
 $vsTool = $dependencies.tools.vs_build_tools
 $vsInstallerPath = Join-Path $env:TEMP "vs_buildtools.exe"
 Download-File -Uri $vsTool.url -OutFile $vsInstallerPath
@@ -450,8 +485,8 @@ if (Test-Path $vsInstallerPath) {
     Write-Log "  - FAILED to download Visual Studio Build Tools installer." -Color Red
 }
 
-# --- Step 7: Download Workflows & Settings ---
-Write-Log "`nStep 7: Downloading Workflows & Settings..." -Color Yellow
+# --- Step 8: Download Workflows & Settings ---
+Write-Log "`nDownloading Workflows & Settings..." -Level 0
 $settingsFile = $dependencies.files.comfy_settings
 $settingsDest = Join-Path $InstallPath $settingsFile.destination
 $settingsDir = Split-Path $settingsDest -Parent
@@ -464,8 +499,8 @@ if (-not (Test-Path $workflowCloneDest)) {
     Invoke-AndLog "git" "clone $workflowRepo `"$workflowCloneDest`"" 
 }
 
-# --- Step 8: Optional Model Pack Downloads ---
-Write-Log "`nStep 8: Optional Model Pack Downloads..." -Color Yellow
+# --- Step 9: Optional Model Pack Downloads ---
+Write-Log "`nOptional Model Pack Downloads..." -Level 0
 $ModelsSource = Join-Path $comfyPath "models"
 Copy-Item -Path $ModelsSource -Destination $InstallPath -Recurse
 # This section remains largely the same as it calls other scripts
@@ -498,5 +533,5 @@ foreach ($pack in $modelPacks) {
 # FINALIZATION
 #===========================================================================
 Write-Log "-------------------------------------------------------------------------------" -Color Green
-Write-Log "Installation of ComfyUI and all nodes is complete!" -Color Green
+Write-Log "Installation of ComfyUI and all nodes is complete!" -Level 0 -Color Green
 Read-Host "Press Enter to close this window."
