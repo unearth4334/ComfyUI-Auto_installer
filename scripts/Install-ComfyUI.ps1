@@ -220,28 +220,52 @@ if (-not $cudaFound) {
 
 # --- Étape 1: Vérification et Installation de Python ---
 Write-Log "`nStep 1: Checking for Python 3.12..." -Color Yellow
-$pythonExe = Get-Command python -ErrorAction SilentlyContinue
-$pythonVersionOK = $false
-if ($pythonExe) {
-    # Capturer la sortie (va souvent sur le flux d'erreur)
-    $versionString = (python --version 2>&1)
-    Write-Log "  - Found Python: $versionString"
+
+# On va stocker la commande exacte pour lancer Python 3.12
+$python312Command = $null
+
+# La méthode la plus fiable : utiliser le lanceur py.exe
+try {
+    # On demande spécifiquement la version 3.12
+    $versionString = (py -3.12 --version 2>&1)
     if ($versionString -like "Python 3.12*") {
-        Write-Log "  - Correct version already installed." -Color Green
-        $pythonVersionOK = $true
+        Write-Log "  - Found Python 3.12 via 'py.exe' launcher: $versionString" -Color Green
+        # La commande à utiliser sera "py -3.12"
+        $python312Command = "py -3.12"
+    }
+}
+catch {
+    Write-Log "  - 'py -3.12' command failed. Checking default 'python' command..." -Color DarkGray
+}
+
+# Si le lanceur n'a pas fonctionné, on essaie la méthode classique
+if (-not $python312Command) {
+    $pythonExe = Get-Command python -ErrorAction SilentlyContinue
+    if ($pythonExe) {
+        $versionString = (python --version 2>&1)
+        if ($versionString -like "Python 3.12*") {
+            Write-Log "  - Found Python 3.12 as default: $versionString" -Color Green
+            # La commande à utiliser sera "python"
+            $python312Command = "python"
+        }
     }
 }
 
-if (-not $pythonVersionOK) {
+# Si après les deux vérifications, on n'a rien trouvé, on installe
+if (-not $python312Command) {
     Write-Log "  - Python 3.12 not found. Downloading and installing..." -Color Yellow
     $pythonInstallerPath = Join-Path $env:TEMP "python-3.12-installer.exe"
     Download-File -Uri "https://www.python.org/ftp/python/3.12.9/python-3.12.9-amd64.exe" -OutFile $pythonInstallerPath
     Write-Log "  - Running Python installer silently... (This may take a moment)"
     # Installation silencieuse, pour tous les utilisateurs, et ajout au PATH
-    Start-Process -FilePath $pythonInstallerPath -ArgumentList "/quiet InstallAllUsers=1 PrependPath=1" -Wait
+    Start-Process -FilePath $pythonInstallerPath -ArgumentList "/quiet InstallAllUsers=1 PrependPath=1 Include_py=1" -Wait
     Remove-Item $pythonInstallerPath
     Write-Log "  - Python 3.12 installation complete." -Color Green
 	Refresh-Path
+    
+    # Après installation, la commande "py -3.12" devrait fonctionner
+    $python312Command = "py -3.12"
+    Write-Log "  - Python will now be invoked using '$python312Command'." -Color Cyan
 }
 
 # --- Étape 2: Installation des dépendances (Aria2, 7-Zip, Git) ---
@@ -268,9 +292,14 @@ if (-not (Test-Path $comfyPath)) {
 }
 
 if (-not (Test-Path (Join-Path $comfyPath "venv"))) {
-    Write-Log "  - Creating Python virtual environment (venv)..."
+    Write-Log "  - Creating Python virtual environment (venv) using '$python312Command'..."
     Push-Location $comfyPath
-    Invoke-AndLog "python" "-m venv venv"
+    
+    # *** MODIFICATION CLÉ ***
+    # On utilise la commande exacte que nous avons validée précédemment
+    $command, $arguments = $python312Command.Split(" ", 2)
+    Invoke-AndLog $command ($arguments + " -m venv venv")
+
     Pop-Location
     Write-Log "  - Venv created successfully." -Color Green
 } else {
