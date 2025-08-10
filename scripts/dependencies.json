@@ -11,35 +11,42 @@
       "arguments": "/VERYSILENT"
     },
     "seven_zip": {
+      "name": "7-Zip",
       "version": "22.01",
       "url": "https://www.7-zip.org/a/7z2201-x64.exe",
-      "arguments": "/S",
-      "path": "C:\\Program Files\\7-Zip\\7z.exe"
+      "install_path": "C:\\ProgramData\\7-Zip"
     },
     "aria2": {
+      "name": "aria2",
       "version": "1.36.0",
       "url": "https://github.com/aria2/aria2/releases/download/release-1.36.0/aria2-1.36.0-win-64bit-build1.zip",
-      "install_path": "C:\\Tools\\aria2"
+      "install_path": "C:\\ProgramData\\aria2"
     },
     "ninja": {
+      "name": "ninja",
       "version": "1.13.1",
       "url": "https://github.com/ninja-build/ninja/releases/download/v1.13.1/ninja-win.zip",
-      "install_path": "C:\\Tools\\ninja"
+      "install_path": "C:\\ProgramData\\ninja"
     },
     "vs_build_tools": {
       "url": "https://aka.ms/vs/17/release/vs_BuildTools.exe",
-      "arguments": "--quiet --wait --norestart --add Microsoft.VisualStudio.Component.VC.Tools.x86.x64 --add Microsoft.VisualStudio.Component.VC.CMake.Project --add Microsoft.VisualStudio.Component.Windows11SDK.26100"
+      "arguments": "--quiet --wait --norestart --add Microsoft.VisualStudio.Component.VC.Tools.x86.x64 --add Microsoft.VisualStudio.Component.VC.CMake.Project --add Microsoft.VisualStudio.Component.Windows11SDK.26100",
+      "install_path": "C:\\Program Files (x86)\\Microsoft Visual Studio\\2022\\BuildTools"
     },
-	"ccache": {
+    "ccache": {
       "name": "ccache",
       "version": "4.11.3",
       "url": "https://github.com/ccache/ccache/releases/download/v4.11.3/ccache-4.11.3-windows-x86_64.zip",
-      "install_path": "C:\\Tools\\ccache"
+      "install_path": "C:\\ProgramData\\ccache"
     }
   },
   "repositories": {
-    "comfy_ui": "https://github.com/comfyanonymous/ComfyUI.git",
-    "workflows": "https://github.com/UmeAiRT/ComfyUI-Workflows"
+    "comfyui": {
+        "url": "https://github.com/comfyanonymous/ComfyUI.git"
+    },
+    "workflows": {
+        "url": "https://github.com/UmeAiRT/ComfyUI-Workflows"
+    }
   },
   "pip_packages": {
     "upgrade": [
