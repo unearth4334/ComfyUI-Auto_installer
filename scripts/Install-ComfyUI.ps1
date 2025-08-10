@@ -35,7 +35,8 @@ function Refresh-Path { $env:Path = "$([System.Environment]::GetEnvironmentVaria
 #===========================================================================
 # SECTION 2: MAIN SCRIPT EXECUTION
 #===========================================================================
-
+Write-Host "`n>>> CONFIRMATION: EXÉCUTION DU SCRIPT FINAL CORRIGÉ <<<`n" -ForegroundColor Green
+Write-Log "DEBUG: Loaded tools config: $($dependencies.tools | ConvertTo-Json -Depth 3)" -Level 3
 $global:totalSteps = 10
 $global:currentStep = 0
 $totalCores = [int]$env:NUMBER_OF_PROCESSORS
