@@ -122,9 +122,11 @@ function Refresh-Path {
 #===========================================================================
 # SECTION 2: MAIN SCRIPT EXECUTION
 #===========================================================================
+# NOUVEAU : Calcul décomposé pour une robustesse maximale
 Write-Log "--- Calculating optimal jobs ---" -Color DarkGray
-$totalCores = $env:NUMBER_OF_PROCESSORS
-Write-Log "  - Step 0: Detected Cores: '$totalCores'" -Color DarkGray
+# LA CORRECTION DÉFINITIVE : On convertit la variable en nombre entier [int]
+$totalCores = [int]$env:NUMBER_OF_PROCESSORS
+Write-Log "  - Step 0: Detected Cores: '$totalCores' (Type: $($totalCores.GetType().Name))" -Color DarkGray
 
 # Étape 1: Multiplication
 $multipliedCores = $totalCores * 3
@@ -139,12 +141,13 @@ $optimalParallelJobs = [int][Math]::Floor($dividedCores)
 Write-Log "  - Step 3 (Floor): Result is '$optimalParallelJobs'" -Color DarkGray
 
 # Étape 4: Vérification minimum
-if ($optimalParallelJobs -lt 1) { 
-    $optimalParallelJobs = 1 
+if ($optimalParallelJobs -lt 1) {
+    $optimalParallelJobs = 1
     Write-Log "  - Step 4 (Check): Value was less than 1, set to 1." -Color DarkGray
 }
 
 Write-Log "--- Calculation complete. Using $optimalParallelJobs parallel jobs. ---" -Color Green
+
 Clear-Host
 # --- Banner ---
 Write-Log "-------------------------------------------------------------------------------"
