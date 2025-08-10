@@ -288,8 +288,8 @@ if (-not (Test-Path (Join-Path $comfyPath "venv"))) {
 }
 Invoke-AndLog "git" "config --global --add safe.directory `"$comfyPath`""
 
-# --- Step 4: Install Python Dependencies ---
-Write-Log "`nStep 4: Installing all Python dependencies into the venv..." -Color Yellow
+# --- Step 4: Install Core Dependencies (Torch & ComfyUI) ---
+Write-Log "`nStep 4: Installing Core Dependencies (Torch & ComfyUI)..." -Color Yellow
 
 # Upgrade pip and wheel
 $pipUpgradePackages = $dependencies.pip_packages.upgrade -join " "
@@ -303,6 +303,48 @@ Invoke-AndLog "$venvPython" "-m pip install --pre $($dependencies.pip_packages.t
 # Install ComfyUI requirements.txt
 Write-Log "  - Installing ComfyUI requirements..."
 Invoke-AndLog "$venvPython" "-m pip install -r `"$comfyPath\$($dependencies.pip_packages.comfyui_requirements)`""
+
+
+# --- Step 5: Install Custom Nodes ---
+Write-Log "`nStep 5: Installing custom nodes and their dependencies..." -Color Yellow
+$csvUrl = $dependencies.files.custom_nodes_csv.url
+$csvPath = Join-Path $InstallPath $dependencies.files.custom_nodes_csv.destination
+Download-File -Uri $csvUrl -OutFile $csvPath
+
+if (-not (Test-Path $csvPath)) {
+    Write-Log "  - ERROR: Could not download custom nodes list. Skipping." -Color Red
+} else {
+    $customNodes = Import-Csv -Path $csvPath
+    $customNodesPath = Join-Path $comfyPath "custom_nodes" # Corrected path to be inside ComfyUI
+
+    foreach ($node in $customNodes) {
+        $nodeName = $node.Name
+        $repoUrl = $node.RepoUrl
+        $nodePath = Join-Path $customNodesPath $nodeName
+        
+        if ($node.Subfolder) {
+            $nodePath = Join-Path $customNodesPath $node.Subfolder
+        }
+
+        if (-not (Test-Path $nodePath)) {
+            Write-Log "  - Installing $nodeName..."
+            Invoke-AndLog "git" "clone $repoUrl `"$nodePath`""
+            if ($node.RequirementsFile) {
+                $reqPath = Join-Path $nodePath $node.RequirementsFile
+                if (Test-Path $reqPath) { 
+                    Write-Log "    - Installing requirements for $nodeName..."
+                    Invoke-AndLog "$venvPython" "-m pip install -r `"$reqPath`"" 
+                }
+            }
+        } else {
+            Write-Log "  - $nodeName (already exists, skipping)" -Color Green
+        }
+    }
+}
+
+
+# --- Step 6: Install and Enforce Final Python Dependencies ---
+Write-Log "`nStep 6: Installing and Enforcing Final Python Dependencies..." -Color Yellow
 
 # Install standard packages from list
 $standardPackages = $dependencies.pip_packages.standard -join " "
@@ -322,24 +364,19 @@ foreach ($wheel in $dependencies.pip_packages.wheels) {
 # Install packages from git repositories
 Write-Log "  - Installing packages from git repositories..."
 foreach ($repo in $dependencies.pip_packages.git_repos) {
+    # ... (Le contenu de cette boucle reste le même, avec les optimisations etc.)
     Write-Log "    - Installing $($repo.name)... (This may take several minutes)"
     $installUrl = "git+$($repo.url)@$($repo.commit)"
     $pipArgs = "-m pip install `"$installUrl`""
     
-    # --- Optimisations de compilation utilisant la valeur pré-calculée ---
     $useOptimizations = $false
     if ($repo.name -eq "xformers" -or $repo.name -eq "SageAttention") {
         $useOptimizations = $true
-        
-        # On utilise la variable calculée au début du script
         $env:XFORMERS_BUILD_TYPE = "Release"
-        $env:MAX_JOBS = $optimalParallelJobs # Utilise la valeur pré-calculée
-
+        $env:MAX_JOBS = $optimalParallelJobs
         Write-Log "      -> Build optimizations ENABLED (Release mode, $optimalParallelJobs parallel jobs)" -Color Cyan
     }
-    # ---------------------------------------------
     
-    # Gérer les cas spéciaux
     if ($repo.name -eq "xformers") {
         $env:FORCE_CUDA = "1"
         $pipArgs = "-m pip install --no-build-isolation --verbose `"$installUrl`""
@@ -356,40 +393,6 @@ foreach ($repo in $dependencies.pip_packages.git_repos) {
     }
 
     Invoke-AndLog "$venvPython" $pipArgs
-}
-
-# --- Step 5: Install Custom Nodes ---
-Write-Log "`nStep 5: Installing custom nodes from CSV list..." -Color Yellow
-$csvUrl = $dependencies.files.custom_nodes_csv.url
-$csvPath = Join-Path $InstallPath $dependencies.files.custom_nodes_csv.destination
-Download-File -Uri $csvUrl -OutFile $csvPath
-
-if (-not (Test-Path $csvPath)) {
-    Write-Log "  - ERROR: Could not download custom nodes list. Skipping." -Color Red
-} else {
-    $customNodes = Import-Csv -Path $csvPath
-    $customNodesPath = Join-Path $InstallPath "custom_nodes" # Corrected path
-
-    foreach ($node in $customNodes) {
-        $nodeName = $node.Name
-        $repoUrl = $node.RepoUrl
-        $nodePath = Join-Path $customNodesPath $nodeName
-        
-        if ($node.Subfolder) {
-            $nodePath = Join-Path $customNodesPath $node.Subfolder
-        }
-
-        if (-not (Test-Path $nodePath)) {
-            Write-Log "  - Installing $nodeName..."
-            Invoke-AndLog "git" "clone $repoUrl `"$nodePath`""
-            if ($node.RequirementsFile) {
-                $reqPath = Join-Path $nodePath $node.RequirementsFile
-                if (Test-Path $reqPath) { Invoke-AndLog "$venvPython" "-m pip install --upgrade-strategy `"only-if-needed`" -r `"$reqPath`"" }
-            }
-        } else {
-            Write-Log "  - $nodeName (already exists, skipping)" -Color Green
-        }
-    }
 }
 
 # --- Step 6: Install VS Build Tools ---
