@@ -301,7 +301,25 @@ foreach ($repo in $dependencies.pip_packages.git_repos) {
     $installUrl = "git+$($repo.url)@$($repo.commit)"
     $pipArgs = "-m pip install `"$installUrl`""
     
-    # Handle special cases
+    # --- NOUVEAU: Optimisations de compilation DYNAMIQUES ---
+    $useOptimizations = $false
+    if ($repo.name -eq "xformers" -or $repo.name -eq "SageAttention") {
+        $useOptimizations = $true
+        
+        # Calculer le nombre de jobs optimal
+        $totalCores = $env:NUMBER_OF_PROCESSORS
+        $maxJobs = [int][Math]::Floor($totalCores * 0.75)
+        if ($maxJobs -lt 1) { $maxJobs = 1 }
+        
+        # Définir les variables d'environnement pour la compilation
+        $env:XFORMERS_BUILD_TYPE = "Release" # Forcer le build en mode "Release"
+        $env:MAX_JOBS = $maxJobs
+        
+        Write-Log "      -> Build optimizations ENABLED (Release mode, $maxJobs parallel jobs)" -Color Cyan
+    }
+    # ---------------------------------------------
+    
+    # Gérer les cas spéciaux
     if ($repo.name -eq "xformers") {
         $env:FORCE_CUDA = "1"
         $pipArgs = "-m pip install --no-build-isolation --verbose `"$installUrl`""
@@ -314,12 +332,17 @@ foreach ($repo in $dependencies.pip_packages.git_repos) {
         Invoke-AndLog "git" "clone $($repo.url) `"$clonePath`""
         Invoke-AndLog "$venvPython" "-m pip install --no-build-isolation --verbose `"$clonePath`""
         Remove-Item $clonePath -Recurse -Force -ErrorAction SilentlyContinue
-        continue # Skip the generic pip install below
+        continue 
     }
 
     Invoke-AndLog "$venvPython" $pipArgs
     
-    # Cleanup environment variables
+    # --- Nettoyage des variables d'environnement ---
+    if ($useOptimizations) {
+        $env:XFORMERS_BUILD_TYPE = $null
+        $env:MAX_JOBS = $null
+        Write-Log "      -> Build optimizations DISABLED" -Color DarkGray
+    }
     if ($repo.name -eq "xformers") {
         $env:FORCE_CUDA = $null
     }
