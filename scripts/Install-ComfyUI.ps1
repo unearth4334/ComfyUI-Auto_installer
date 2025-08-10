@@ -123,7 +123,7 @@ function Refresh-Path {
 # SECTION 2: MAIN SCRIPT EXECUTION
 #===========================================================================
 $totalCores = $env:NUMBER_OF_PROCESSORS
-$optimalParallelJobs = [int][Math]::Floor($totalCores * 0.75)
+$optimalParallelJobs = [int][Math]::Floor(($totalCores * 3) / 4)
 if ($optimalParallelJobs -lt 1) { $optimalParallelJobs = 1 }
 Write-Log "System has $totalCores logical cores. Using $optimalParallelJobs parallel jobs for compilation." -Color DarkGray
 Clear-Host
