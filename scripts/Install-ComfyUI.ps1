@@ -122,10 +122,29 @@ function Refresh-Path {
 #===========================================================================
 # SECTION 2: MAIN SCRIPT EXECUTION
 #===========================================================================
+Write-Log "--- Calculating optimal jobs ---" -Color DarkGray
 $totalCores = $env:NUMBER_OF_PROCESSORS
-$optimalParallelJobs = [int][Math]::Floor(($totalCores * 3) / 4)
-if ($optimalParallelJobs -lt 1) { $optimalParallelJobs = 1 }
-Write-Log "System has $totalCores logical cores. Using $optimalParallelJobs parallel jobs for compilation." -Color DarkGray
+Write-Log "  - Step 0: Detected Cores: '$totalCores'" -Color DarkGray
+
+# Étape 1: Multiplication
+$multipliedCores = $totalCores * 3
+Write-Log "  - Step 1 (x3): Result is '$multipliedCores'" -Color DarkGray
+
+# Étape 2: Division
+$dividedCores = $multipliedCores / 4
+Write-Log "  - Step 2 (/4): Result is '$dividedCores'" -Color DarkGray
+
+# Étape 3: Arrondi à l'entier inférieur
+$optimalParallelJobs = [int][Math]::Floor($dividedCores)
+Write-Log "  - Step 3 (Floor): Result is '$optimalParallelJobs'" -Color DarkGray
+
+# Étape 4: Vérification minimum
+if ($optimalParallelJobs -lt 1) { 
+    $optimalParallelJobs = 1 
+    Write-Log "  - Step 4 (Check): Value was less than 1, set to 1." -Color DarkGray
+}
+
+Write-Log "--- Calculation complete. Using $optimalParallelJobs parallel jobs. ---" -Color Green
 Clear-Host
 # --- Banner ---
 Write-Log "-------------------------------------------------------------------------------"
