@@ -1,20 +1,3 @@
-Excellent retour ! Vos logs sont très clairs et m'ont permis d'identifier deux bugs distincts dans le script que je vous ai fourni. Mes excuses pour ces erreurs. L'un est lié à l'installation des outils et l'autre à un chemin de fichier incorrect.
-
-Le Diagnostic
-Bug n°1 : Erreur "Null" lors de l'installation des outils (Étape 3)
-Le message L’argument est Null ou vide se produit parce que la boucle qui installe les outils (aria2, ninja, 7-Zip, etc.) n'était pas assez intelligente. Elle essayait d'accéder à des informations dans dependencies.json qui n'existaient pas pour tous les outils de la liste, ce qui passait une valeur null à la fonction d'installation et provoquait le crash.
-
-Bug n°2 : Chemin dupliqué pour custom_nodes.csv (Étape 6)
-Le message Impossible de trouver une partie du chemin d'accès 'E:\Test\Run\scripts\scripts\custom_nodes.csv' est très clair. Le script construisait un chemin avec scripts\scripts\ dedans. C'est une erreur de ma part dans la construction du chemin.
-
-La Solution
-J'ai corrigé ces deux problèmes. La boucle d'installation des outils est maintenant plus robuste et le chemin vers le fichier CSV est corrigé.
-
-Voici le script Install-ComfyUI.ps1 complet et corrigé. Remplacez simplement le contenu de votre fichier par ce code, et les erreurs devraient disparaître.
-
-Script Install-ComfyUI.ps1 Final et Corrigé
-PowerShell
-
 #Requires -RunAsAdministrator
 
 <#
@@ -62,9 +45,9 @@ if ($optimalParallelJobs -lt 1) { $optimalParallelJobs = 1 }
 Clear-Host
 $banner = @"
 -------------------------------------------------------------------------------
-                      __  __           ___   _ ____  ______
-                     / / / /___ ___  /   |  (_) __ \/_  __/
-                    / / / / __ `__ \/ _ \/ /| | / / /_/ / / /
+                      __  __               ___    _ ____  ______
+                     / / / /___ ___  ___  /   |  (_) __ \/_  __/
+                    / / / / __ `__ \/ _ \/ /| | / / /_/ / / / 
                    / /_/ / / / / / /  __/ ___ |/ / _, _/ / /
                    \____/_/ /_/ /_/\___/_/  |_/_/_/ |_| /_/
 -------------------------------------------------------------------------------
