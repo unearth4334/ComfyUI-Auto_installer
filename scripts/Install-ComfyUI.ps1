@@ -259,7 +259,17 @@ if (-not (Get-Command git.exe -ErrorAction SilentlyContinue)) {
 }
 Invoke-AndLog "git" "config --system core.longpaths true"
 Write-Log "  - Git is ready." -Color Green
-
+$ccacheTool = $dependencies.tools.ccache
+if (-not (Get-Command 'ccache' -ErrorAction SilentlyContinue)) {
+    Install-Binary-From-Zip -ToolConfig @{
+        name=$ccacheTool.name; 
+        version=$ccacheTool.version; 
+        url=$ccacheTool.url; 
+        install_path=$ccacheTool.install_path
+    }
+} else {
+    Write-Log "  - ccache is already installed." -Color Green
+}
 # --- Step 3: Clone ComfyUI and create Venv ---
 Write-Log "`nStep 3: Cloning ComfyUI and creating Virtual Environment..." -Color Yellow
 if (-not (Test-Path $comfyPath)) {
@@ -364,19 +374,28 @@ foreach ($wheel in $dependencies.pip_packages.wheels) {
 # Install packages from git repositories
 Write-Log "  - Installing packages from git repositories..."
 foreach ($repo in $dependencies.pip_packages.git_repos) {
-    # ... (Le contenu de cette boucle reste le même, avec les optimisations etc.)
     Write-Log "    - Installing $($repo.name)... (This may take several minutes)"
     $installUrl = "git+$($repo.url)@$($repo.commit)"
     $pipArgs = "-m pip install `"$installUrl`""
     
+    # --- Logique d'optimisation ---
     $useOptimizations = $false
     if ($repo.name -eq "xformers" -or $repo.name -eq "SageAttention") {
         $useOptimizations = $true
+        
+        # Activation de CCACHE en l'ajoutant au PATH et en définissant les variables
+        $env:PATH = "$($dependencies.tools.ccache.install_path);$($env:PATH)"
+        $env:CC = "cl.exe"
+        $env:CXX = "cl.exe"
+
+        # Autres optimisations
         $env:XFORMERS_BUILD_TYPE = "Release"
         $env:MAX_JOBS = $optimalParallelJobs
-        Write-Log "      -> Build optimizations ENABLED (Release mode, $optimalParallelJobs parallel jobs)" -Color Cyan
+        
+        Write-Log "      -> Build optimizations ENABLED (ccache, Release mode, $optimalParallelJobs jobs)" -Color Cyan
     }
     
+    # --- Gestion des cas spéciaux pour chaque paquet ---
     if ($repo.name -eq "xformers") {
         $env:FORCE_CUDA = "1"
         $pipArgs = "-m pip install --no-build-isolation --verbose `"$installUrl`""
@@ -384,21 +403,26 @@ foreach ($repo in $dependencies.pip_packages.git_repos) {
     if ($repo.name -eq "apex") {
         $pipArgs = "-m pip install $($repo.install_options) `"$installUrl`""
     }
-     if ($repo.name -eq "SageAttention") {
+    if ($repo.name -eq "SageAttention") {
+        # SageAttention a une méthode d'installation spéciale
         $clonePath = Join-Path $InstallPath "SageAttention_temp"
         Invoke-AndLog "git" "clone $($repo.url) `"$clonePath`""
         Invoke-AndLog "$venvPython" "-m pip install --no-build-isolation --verbose `"$clonePath`""
         Remove-Item $clonePath -Recurse -Force -ErrorAction SilentlyContinue
-        continue 
+        continue # On passe directement au paquet suivant de la boucle
     }
 
+    # --- Lancement de l'installation ---
     Invoke-AndLog "$venvPython" $pipArgs
-
-    # REMETTEZ CE BLOC DE NETTOYAGE
-    # --- Nettoyage des variables d'environnement ---
+    
+    # --- Bloc de nettoyage des variables d'environnement ---
     if ($useOptimizations) {
+        # On réinitialise les variables pour ne pas affecter les autres paquets
+        $env:CC = $null
+        $env:CXX = $null
         $env:XFORMERS_BUILD_TYPE = $null
         $env:MAX_JOBS = $null
+        Refresh-Path # Restaure le PATH original pour la session
         Write-Log "      -> Build optimizations DISABLED" -Color DarkGray
     }
     if ($repo.name -eq "xformers") {

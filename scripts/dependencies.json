@@ -29,6 +29,12 @@
     "vs_build_tools": {
       "url": "https://aka.ms/vs/17/release/vs_BuildTools.exe",
       "arguments": "--quiet --wait --norestart --add Microsoft.VisualStudio.Component.VC.Tools.x86.x64 --add Microsoft.VisualStudio.Component.VC.CMake.Project --add Microsoft.VisualStudio.Component.Windows11SDK.26100"
+    },
+	"ccache": {
+      "name": "ccache",
+      "version": "4.11.3",
+      "url": "https://github.com/ccache/ccache/releases/download/v4.11.3/ccache-4.11.3-windows-x86_64.zip",
+      "install_path": "C:\\Tools\\ccache"
     }
   },
   "repositories": {
