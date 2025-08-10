@@ -94,22 +94,29 @@ function Install-Binary-From-Zip {
     Write-Log "Extracting zip file to $destFolder..."
     Expand-Archive -Path $zipPath -DestinationPath $destFolder -Force
     
-    # Handle cases where zip extracts to a subfolder
-    $extractedSubfolder = Get-ChildItem -Path $destFolder -Directory | Where-Object { $_.Name -like "*$($ToolConfig.version)*" } | Select-Object -First 1
-    if ($null -ne $extractedSubfolder) {
+    # Gère les cas où le zip crée un sous-dossier
+    $extractedSubfolder = Get-ChildItem -Path $destFolder -Directory | Select-Object -First 1
+    if (($null -ne $extractedSubfolder) -and ($extractedSubfolder.Name -ne "bin")) {
         Write-Log "  - Moving contents from $($extractedSubfolder.FullName) to $destFolder"
         Move-Item -Path (Join-Path $extractedSubfolder.FullName "*") -Destination $destFolder -Force
         Remove-Item -Path $extractedSubfolder.FullName -Recurse -Force
     }
 
-    $envScope = "User"
-    $oldPath = [System.Environment]::GetEnvironmentVariable("Path", $envScope)
-    if ($oldPath -notlike "*$destFolder*") {
+    # --- CORRECTION DE LA GESTION DU PATH ---
+    # On récupère le PATH permanent de l'utilisateur
+    $userPath = [System.Environment]::GetEnvironmentVariable("Path", "User")
+    
+    # On vérifie si le dossier n'est pas déjà dans le PATH permanent
+    if ($userPath -notlike "*$destFolder*") {
         Write-Log "Adding '$destFolder' to user PATH..."
-        $newPath = $oldPath + ";$destFolder"
-        [System.Environment]::SetEnvironmentVariable("Path", $newPath, $envScope)
-        $env:Path = $newPath # Update for current session
-        Write-Log "PATH updated. $($ToolConfig.name) will be available immediately."
+        # On construit le nouveau PATH en ajoutant le dossier à la fin
+        $newPath = $userPath + ";$destFolder"
+        # On met à jour le PATH permanent
+        [System.Environment]::SetEnvironmentVariable("Path", $newPath, "User")
+        
+        # On met aussi à jour le PATH de la session actuelle pour une utilisation immédiate
+        $env:Path = $env:Path + ";$destFolder"
+        Write-Log "PATH updated. $($ToolConfig.name) is now available."
     }
     Write-Log "--- $($ToolConfig.name) binary installation complete ---" -Color Magenta
 }
