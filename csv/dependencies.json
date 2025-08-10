@@ -47,15 +47,15 @@
     "comfyui_requirements": "requirements.txt",
     "wheels": [
       {
-        "name": "nunchaku",
+        "name": "nunchaku-0.3.1+torch2.8-cp312-cp312-win_amd64",
         "url": "https://github.com/nunchaku-tech/nunchaku/releases/download/v0.3.1/nunchaku-0.3.1+torch2.8-cp312-cp312-win_amd64.whl"
       },
       {
-        "name": "insightface",
+        "name": "insightface-0.7.3-cp312-cp312-win_amd64",
         "url": "https://github.com/UmeAiRT/ComfyUI-Auto_installer/raw/refs/heads/main/whl/insightface-0.7.3-cp312-cp312-win_amd64.whl"
       },
       {
-        "name": "triton",
+        "name": "triton-3.3.0-py3-none-any",
         "url": "https://github.com/UmeAiRT/ComfyUI-Auto_installer/raw/refs/heads/main/whl/triton-3.3.0-py3-none-any.whl"
       }
     ],
