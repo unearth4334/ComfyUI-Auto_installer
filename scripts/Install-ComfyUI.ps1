@@ -171,26 +171,50 @@ if (-not $cudaFound) {
 
 # --- Step 1: Install Python ---
 Write-Log "`nStep 1: Checking for Python $($dependencies.tools.python.version)..." -Color Yellow
-$pythonExe = Get-Command python -ErrorAction SilentlyContinue
-$pythonVersionOK = $false
-if ($pythonExe) {
-    $versionString = (python --version 2>&1)
-    Write-Log "  - Found Python: $versionString"
-    if ($versionString -like "Python $($dependencies.tools.python.version)*") {
-        Write-Log "  - Correct version already installed." -Color Green
-        $pythonVersionOK = $true
+
+# NOUVEAU: On va stocker la commande exacte (ex: "py -3.12" ou "python") pour plus tard.
+$pythonCommandToUse = $null 
+$requiredPythonVersion = $dependencies.tools.python.version
+
+# NOUVEAU: Méthode 1 (la plus fiable) - On essaie d'utiliser le lanceur py.exe
+try {
+    $versionString = (py "-$requiredPythonVersion" --version 2>&1)
+    if ($versionString -like "Python $requiredPythonVersion*") {
+        Write-Log "  - Found Python $requiredPythonVersion via 'py.exe' launcher: $versionString" -Color Green
+        $pythonCommandToUse = "py -$requiredPythonVersion"
+    }
+}
+catch {
+    Write-Log "  - 'py -$requiredPythonVersion' failed. Checking default 'python' command..." -Color DarkGray
+}
+
+# NOUVEAU: Méthode 2 (repli) - Si la méthode 1 a échoué, on vérifie la commande 'python' par défaut
+if (-not $pythonCommandToUse) {
+    $pythonExe = Get-Command python -ErrorAction SilentlyContinue
+    if ($pythonExe) {
+        $versionString = (python --version 2>&1)
+        Write-Log "  - Found default Python: $versionString"
+        if ($versionString -like "Python $requiredPythonVersion*") {
+            Write-Log "  - Default Python is the correct version." -Color Green
+            $pythonCommandToUse = "python"
+        }
     }
 }
 
-if (-not $pythonVersionOK) {
-    Write-Log "  - Python $($dependencies.tools.python.version) not found. Downloading and installing..." -Color Yellow
+# NOUVEAU: Installation si aucune des méthodes n'a trouvé la bonne version
+if (-not $pythonCommandToUse) {
+    Write-Log "  - Python $requiredPythonVersion not found. Downloading and installing..." -Color Yellow
     $pythonInstallerPath = Join-Path $env:TEMP "python-installer.exe"
     Download-File -Uri $dependencies.tools.python.url -OutFile $pythonInstallerPath
     Write-Log "  - Running Python installer silently..."
     Start-Process -FilePath $pythonInstallerPath -ArgumentList $dependencies.tools.python.arguments -Wait
     Remove-Item $pythonInstallerPath
     Write-Log "  - Python installation complete." -Color Green
-	Refresh-Path
+    Refresh-Path
+    
+    # Après installation, on utilise la commande la plus fiable
+    $pythonCommandToUse = "py -$requiredPythonVersion"
+    Write-Log "  - Python will now be invoked using '$pythonCommandToUse'." -Color Cyan
 }
 
 # --- Step 2: Install Required Tools ---
@@ -221,9 +245,17 @@ if (-not (Test-Path $comfyPath)) {
 }
 
 if (-not (Test-Path (Join-Path $comfyPath "venv"))) {
-    Write-Log "  - Creating Python virtual environment (venv)..."
+    Write-Log "  - Creating Python virtual environment (venv) using '$pythonCommandToUse'..."
     Push-Location $comfyPath
-    Invoke-AndLog "python" "-m venv venv"
+    
+    # NOUVEAU: On utilise la commande validée à l'étape 1 pour créer le venv
+    # On sépare l'exécutable de ses arguments (ex: "py" et "-3.12")
+    $commandParts = $pythonCommandToUse.Split(' ', 2)
+    $executable = $commandParts[0]
+    $baseArguments = if ($commandParts.Length -gt 1) { $commandParts[1] } else { "" }
+    
+    Invoke-AndLog $executable "$baseArguments -m venv venv"
+
     Pop-Location
     Write-Log "  - Venv created successfully." -Color Green
 } else {
