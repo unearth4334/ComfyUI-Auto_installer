@@ -122,7 +122,10 @@ function Refresh-Path {
 #===========================================================================
 # SECTION 2: MAIN SCRIPT EXECUTION
 #===========================================================================
-
+$totalCores = $env:NUMBER_OF_PROCESSORS
+$optimalParallelJobs = [int][Math]::Floor($totalCores * 0.75)
+if ($optimalParallelJobs -lt 1) { $optimalParallelJobs = 1 }
+Write-Log "System has $totalCores logical cores. Using $optimalParallelJobs parallel jobs for compilation." -Color DarkGray
 Clear-Host
 # --- Banner ---
 Write-Log "-------------------------------------------------------------------------------"
@@ -301,21 +304,16 @@ foreach ($repo in $dependencies.pip_packages.git_repos) {
     $installUrl = "git+$($repo.url)@$($repo.commit)"
     $pipArgs = "-m pip install `"$installUrl`""
     
-    # --- NOUVEAU: Optimisations de compilation DYNAMIQUES ---
+    # --- Optimisations de compilation utilisant la valeur pré-calculée ---
     $useOptimizations = $false
     if ($repo.name -eq "xformers" -or $repo.name -eq "SageAttention") {
         $useOptimizations = $true
         
-        # Calculer le nombre de jobs optimal
-        $totalCores = $env:NUMBER_OF_PROCESSORS
-        $maxJobs = [int][Math]::Floor($totalCores * 0.75)
-        if ($maxJobs -lt 1) { $maxJobs = 1 }
-        
-        # Définir les variables d'environnement pour la compilation
-        $env:XFORMERS_BUILD_TYPE = "Release" # Forcer le build en mode "Release"
-        $env:MAX_JOBS = $maxJobs
-        
-        Write-Log "      -> Build optimizations ENABLED (Release mode, $maxJobs parallel jobs)" -Color Cyan
+        # On utilise la variable calculée au début du script
+        $env:XFORMERS_BUILD_TYPE = "Release"
+        $env:MAX_JOBS = $optimalParallelJobs # Utilise la valeur pré-calculée
+
+        Write-Log "      -> Build optimizations ENABLED (Release mode, $optimalParallelJobs parallel jobs)" -Color Cyan
     }
     # ---------------------------------------------
     
