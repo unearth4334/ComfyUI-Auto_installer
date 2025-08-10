@@ -6,26 +6,35 @@
 .DESCRIPTION
     This script performs a 'git pull' on the main ComfyUI repository,
     all custom nodes, and the workflow repository. It then updates all
-    Python dependencies from any found 'requirements.txt' files.
-    It is designed to be run from a subfolder.
+    Python dependencies from any found 'requirements.txt' files and
+    ensures pinned packages are at the correct version.
 #>
 
 #===========================================================================
 # SECTION 1: SCRIPT CONFIGURATION & HELPER FUNCTIONS
 #===========================================================================
 
-# === CORRECTION : Le script s'exécute depuis un sous-dossier, on cible donc le dossier parent ===
+# --- Paths and Configuration ---
 $InstallPath = (Split-Path -Path $PSScriptRoot -Parent)
-
 $comfyPath = Join-Path $InstallPath "ComfyUI"
-$customNodesPath = Join-Path $InstallPath "custom_nodes"
+$customNodesPath = Join-Path $comfyPath "custom_nodes" # Corrected path
 $workflowPath = Join-Path $InstallPath "user\default\workflows\UmeAiRT-Workflow"
 $venvPython = Join-Path $comfyPath "venv\Scripts\python.exe"
 $logPath = Join-Path $InstallPath "logs"
 $logFile = Join-Path $logPath "update_log.txt"
 
+# --- Load Dependencies from JSON ---
+$dependenciesFile = Join-Path $InstallPath "csv\dependencies.json"
+if (-not (Test-Path $dependenciesFile)) {
+    Write-Host "FATAL: dependencies.json not found at '$dependenciesFile'. Cannot proceed." -ForegroundColor Red
+    Read-Host "Press Enter to exit."
+    exit 1
+}
+$dependencies = Get-Content -Raw -Path $dependenciesFile | ConvertFrom-Json
+
 if (-not (Test-Path $logPath)) { New-Item -ItemType Directory -Force -Path $logPath | Out-Null }
 
+# --- Helper Functions ---
 function Write-Log {
     param([string]$Message, [string]$Color = "White")
     $timestamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
@@ -34,19 +43,36 @@ function Write-Log {
     Add-Content -Path $logFile -Value $formattedMessage
 }
 
+function Invoke-AndLog {
+    param(
+        [string]$File,
+        [string]$Arguments
+    )
+    $tempLogFile = Join-Path $env:TEMP ([System.Guid]::NewGuid().ToString() + ".tmp")
+    try {
+        $commandToRun = "`"$File`" $Arguments"
+        $cmdArguments = "/C `"$commandToRun > `"`"$tempLogFile`"`" 2>&1`""
+        Start-Process -FilePath "cmd.exe" -ArgumentList $cmdArguments -Wait -WindowStyle Hidden
+        if (Test-Path $tempLogFile) {
+            $output = Get-Content $tempLogFile
+            Add-Content -Path $logFile -Value $output
+        }
+    } catch {
+        Write-Log "FATAL ERROR trying to execute command: $commandToRun" -Color Red
+    } finally {
+        if (Test-Path $tempLogFile) {
+            Remove-Item $tempLogFile
+        }
+    }
+}
+
 function Invoke-Git-Pull {
     param([string]$DirectoryPath)
     if (Test-Path (Join-Path $DirectoryPath ".git")) {
-        # On utilise cmd.exe pour lancer git pull et rediriger la sortie vers le log
-        $commandToRun = "git -C `"$DirectoryPath`" pull"
-        $cmdArguments = "/C `"$commandToRun >> `"`"$logFile`"`" 2>&1`""
-        try {
-            Start-Process -FilePath "cmd.exe" -ArgumentList $cmdArguments -Wait -WindowStyle Hidden
-        } catch {
-            Write-Log "  - FAILED to run git pull in '$DirectoryPath'" -Color Red
-        }
+        Write-Log "    - Updating $($DirectoryPath)..."
+        Invoke-AndLog "git" "-C `"$DirectoryPath`" pull"
     } else {
-        Write-Log "  - Skipping: Not a git repository." -Color Gray
+        Write-Log "    - Skipping: Not a git repository." -Color Gray
     }
 }
 
@@ -54,47 +80,10 @@ function Invoke-Pip-Install {
     param([string]$RequirementsPath)
     if (Test-Path $RequirementsPath) {
         Write-Log "  - Found requirements: $RequirementsPath. Updating..." -Color Cyan
-        $tempLogFile = Join-Path $env:TEMP ([System.Guid]::NewGuid().ToString() + ".tmp")
-        try {
-            $commandToRun = "`"$venvPython`" -m pip install -r `"$RequirementsPath`""
-            $cmdArguments = "/C `"$commandToRun > `"`"$tempLogFile`"`" 2>&1`""
-            Start-Process -FilePath "cmd.exe" -ArgumentList $cmdArguments -Wait -WindowStyle Hidden
-            if (Test-Path $tempLogFile) { $output = Get-Content $tempLogFile; if($output){ Add-Content -Path $logFile -Value $output } }
-        } finally {
-            if (Test-Path $tempLogFile) { Remove-Item $tempLogFile }
-        }
+        Invoke-AndLog "$venvPython" "-m pip install -r `"$RequirementsPath`""
     }
 }
-function Invoke-AndLog {
-    param(
-        [string]$File,
-        [string]$Arguments
-    )
-    
-    # Chemin vers un fichier de log temporaire unique
-    $tempLogFile = Join-Path $env:TEMP ([System.Guid]::NewGuid().ToString() + ".tmp")
 
-    try {
-        # Exécute la commande et redirige TOUTE sa sortie vers le fichier temporaire
-        $commandToRun = "`"$File`" $Arguments"
-        $cmdArguments = "/C `"$commandToRun > `"`"$tempLogFile`"`" 2>&1`""
-        Start-Process -FilePath "cmd.exe" -ArgumentList $cmdArguments -Wait -WindowStyle Hidden
-        
-        # Une fois la commande terminée, on lit le fichier temporaire
-        if (Test-Path $tempLogFile) {
-            $output = Get-Content $tempLogFile
-            # Et on l'ajoute au log principal en toute sécurité
-            Add-Content -Path $logFile -Value $output
-        }
-    } catch {
-        Write-Log "FATAL ERROR trying to execute command: $commandToRun" -Color Red
-    } finally {
-        # On s'assure que le fichier temporaire est toujours supprimé
-        if (Test-Path $tempLogFile) {
-            Remove-Item $tempLogFile
-        }
-    }
-}
 #===========================================================================
 # SECTION 2: UPDATE PROCESS
 #===========================================================================
@@ -103,86 +92,69 @@ Write-Log "=====================================================================
 Write-Log "             Starting UmeAiRT ComfyUI Update Process" -Color Yellow
 Write-Log "==============================================================================="
 
-# --- 1. Update ComfyUI Core ---
-Write-Log "`n[1/4] Updating ComfyUI Core..." -Color Green
+# --- 1. Update Git Repositories ---
+Write-Log "`n[1/3] Updating all Git repositories..." -Color Green
+Write-Log "  - Updating ComfyUI Core..."
 Invoke-Git-Pull -DirectoryPath $comfyPath
+Write-Log "  - Updating UmeAiRT Workflows..."
+Invoke-Git-Pull -DirectoryPath $workflowPath
 
 # --- 2. Update and Install Custom Nodes ---
-Write-Log "`n[2/4] Updating and Installing Custom Nodes..." -Color Green
+Write-Log "`n[2/3] Updating and Installing Custom Nodes..." -Color Green
+$csvUrl = $dependencies.files.custom_nodes_csv.url
+$csvPath = Join-Path $InstallPath "csv\custom_nodes.csv"
 
-$csvUrl = "https://github.com/UmeAiRT/ComfyUI-Auto_installer/raw/refs/heads/main/csv/custom_nodes.csv"
-$scriptsFolder = Join-Path $InstallPath "scripts"
-$csvPath = Join-Path $scriptsFolder "custom_nodes.csv"
-
-# Télécharge la dernière liste de custom nodes
+# Download the latest list of custom nodes
 try {
-    Invoke-WebRequest -Uri $csvUrl -OutFile $csvPath
+    Invoke-WebRequest -Uri $csvUrl -OutFile $csvPath -ErrorAction Stop
 } catch {
-    Write-Log "  - ERREUR: Impossible de télécharger la liste des custom nodes. Mise à jour des nodes ignorée." -Color Red
+    Write-Log "  - ERROR: Could not download the custom nodes list. Skipping node updates." -Color Red
     return
 }
 
-$customNodesList = Import-Csv -Path $csvPath
-$existingNodeDirs = Get-ChildItem -Path $customNodesPath -Directory
-
-# D'abord, on met à jour les nodes existants
-Write-Log "  - Updating existing nodes..."
-foreach ($dir in $existingNodeDirs) {
-    Write-Log "    - Checking node: $($dir.Name)"
-    Invoke-Git-Pull -DirectoryPath $dir.FullName
+# Update existing nodes
+Write-Log "  - Updating existing custom nodes..."
+Get-ChildItem -Path $customNodesPath -Directory | ForEach-Object {
+    Invoke-Git-Pull -DirectoryPath $_.FullName
 }
 
-# Ensuite, on vérifie s'il y a de nouveaux nodes à installer
+# Check for and install new nodes
 Write-Log "  - Checking for new nodes to install..."
+$customNodesList = Import-Csv -Path $csvPath
 foreach ($node in $customNodesList) {
     $nodeName = $node.Name
     $nodePath = if ($node.Subfolder) { Join-Path $customNodesPath $node.Subfolder } else { Join-Path $customNodesPath $nodeName }
 
     if (-not (Test-Path $nodePath)) {
         Write-Log "    - New node found: $nodeName. Installing..." -Color Yellow
-        
-        $repoUrl = $node.RepoUrl
-        $cloneTargetPath = if ($node.Subfolder) { (Split-Path $nodePath -Parent) } else { $nodePath }
-        if ($nodeName -eq 'ComfyUI-Impact-Subpack') { $clonePath = Join-Path $cloneTargetPath "impact_subpack" } else { $clonePath = $cloneTargetPath }
-        
-        $tempLogFile = Join-Path $env:TEMP ([System.Guid]::NewGuid().ToString() + ".tmp")
-        try {
-            $commandToRun = "git clone $repoUrl `"$clonePath`""
-            $cmdArguments = "/C `"$commandToRun > `"`"$tempLogFile`"`" 2>&1`""
-            Start-Process -FilePath "cmd.exe" -ArgumentList $cmdArguments -Wait -WindowStyle Hidden
-            if (Test-Path $tempLogFile) { Add-Content -Path $logFile -Value (Get-Content $tempLogFile) }
-        } finally {
-            if (Test-Path $tempLogFile) { Remove-Item $tempLogFile }
-        }
+        Invoke-AndLog "git" "clone $($node.RepoUrl) `"$nodePath`""
     }
 }
 
-
-# --- 3. Update Workflows ---
-Write-Log "`n[3/4] Updating UmeAiRT Workflows..." -Color Green
-if (Test-Path $workflowPath) {
-    Invoke-Git-Pull -DirectoryPath $workflowPath
-} else {
-    Write-Log "  - Workflow directory not found, skipping." -Color Gray
-}
-
-# --- 4. Update Python Dependencies ---
-Write-Log "`n[4/4] Updating all Python dependencies..." -Color Green
+# --- 3. Update Python Dependencies ---
+Write-Log "`n[3/3] Updating all Python dependencies..." -Color Green
 Write-Log "  - Checking main ComfyUI requirements..."
 Invoke-Pip-Install -RequirementsPath (Join-Path $comfyPath "requirements.txt")
 
 Write-Log "  - Checking custom node requirements..."
-if (Test-Path $customNodesPath) {
-    foreach ($dir in (Get-ChildItem -Path $customNodesPath -Directory)) {
-        Invoke-Pip-Install -RequirementsPath (Join-Path $dir.FullName "requirements.txt")
+Get-ChildItem -Path $customNodesPath -Directory -Recurse | ForEach-Object {
+    $reqFile = Join-Path $_.FullName "requirements.txt"
+    # Also check for common variations of the requirements file name
+    $reqFileWithCupy = Join-Path $_.FullName "requirements-with-cupy.txt"
+    if (Test-Path $reqFile) {
+        Invoke-Pip-Install -RequirementsPath $reqFile
+    }
+    if (Test-Path $reqFileWithCupy) {
+        Invoke-Pip-Install -RequirementsPath $reqFileWithCupy
     }
 }
-Write-Log "  - Fixing Numpy..."
-Invoke-AndLog "$venvPython" @('-m', 'pip', 'uninstall', 'numpy', 'pandas', '--yes')
-Invoke-AndLog "$venvPython" "-m pip install numpy==1.26.4 pandas"
 
-Write-Log "  - Fixing transformers..."
-Invoke-AndLog "$venvPython" "-m pip install --upgrade transformers==4.49.0"
+# Reinstall pinned packages to ensure correct versions
+Write-Log "  - Ensuring pinned packages are at the correct version..."
+$pinnedPackages = $dependencies.pip_packages.pinned -join " "
+if ($pinnedPackages) {
+    Invoke-AndLog "$venvPython" "-m pip install --force-reinstall $pinnedPackages"
+}
 
 Write-Log "==============================================================================="
 Write-Log "Update process complete!" -Color Yellow
