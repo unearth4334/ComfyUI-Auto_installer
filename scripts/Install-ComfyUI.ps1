@@ -351,7 +351,7 @@ if (-not (Test-Path $csvPath)) {
             Invoke-AndLog "git" "clone $repoUrl `"$nodePath`""
             if ($node.RequirementsFile) {
                 $reqPath = Join-Path $nodePath $node.RequirementsFile
-                if (Test-Path $reqPath) { Invoke-AndLog "$venvPython" "-m pip install -r `"$reqPath`"" }
+                if (Test-Path $reqPath) { Invoke-AndLog "$venvPython" "-m pip install --upgrade-strategy `"only-if-needed`" -r `"$reqPath`"" }
             }
         } else {
             Write-Log "  - $nodeName (already exists, skipping)" -Color Green
