@@ -20,7 +20,7 @@ $logFile = Join-Path $logPath "install_log.txt"
 $venvPython = Join-Path $comfyPath "venv\Scripts\python.exe"
 
 # --- Load Dependencies from JSON ---
-$dependenciesFile = Join-Path $InstallPath "csv\dependencies.json"
+$dependenciesFile = Join-Path $InstallPath "scripts\dependencies.json"
 if (-not (Test-Path $dependenciesFile)) {
     Write-Host "FATAL: dependencies.json not found at '$dependenciesFile'. Cannot proceed." -ForegroundColor Red
     Read-Host "Press Enter to exit."

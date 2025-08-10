@@ -16,8 +16,8 @@ $filesToDownload = @(
     @{ RepoPath = "scripts/Download-LTXV-Models.ps1";  LocalPath = "scripts/Download-LTXV-Models.ps1" },
 
     # Configuration Files
-    @{ RepoPath = "csv/dependencies.json";             LocalPath = "csv/dependencies.json" },
-    @{ RepoPath = "csv/custom_nodes.csv";              LocalPath = "csv/custom_nodes.csv" },
+    @{ RepoPath = "scripts/dependencies.json";             LocalPath = "scripts/dependencies.json" },
+    @{ RepoPath = "scripts/custom_nodes.csv";              LocalPath = "scripts/custom_nodes.csv" },
 
     # Batch Launchers
     @{ RepoPath = "UmeAiRT-Start-ComfyUI.bat";         LocalPath = "UmeAiRT-Start-ComfyUI.bat" },

@@ -96,8 +96,8 @@
       "destination": "user/default/comfy.settings.json"
     },
     "custom_nodes_csv": {
-        "url": "https://github.com/UmeAiRT/ComfyUI-Auto_installer/raw/refs/heads/main/csv/custom_nodes.csv",
-        "destination": "csv/custom_nodes.csv"
+        "url": "https://github.com/UmeAiRT/ComfyUI-Auto_installer/raw/refactor-installer-config/scripts/custom_nodes.csv",
+        "destination": "scripts/custom_nodes.csv"
     }
   }
 }
