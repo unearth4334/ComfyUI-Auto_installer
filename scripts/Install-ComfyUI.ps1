@@ -72,11 +72,47 @@ if (-not $pythonCommandToUse) { Write-Log "Python $requiredPythonVersion not fou
 
 # --- Step 3: Required Tools Check ---
 Write-Log "Checking for Required Tools" -Level 0
-$gitTool = $dependencies.tools.git
-if (-not (Get-Command git.exe -ErrorAction SilentlyContinue)) { Write-Log "Git not found. Installing..." -Level 1 -Color Yellow; $gitInstaller = Join-Path $env:TEMP "Git-Installer.exe"; Download-File -Uri $gitTool.url -OutFile $gitInstaller; Start-Process -FilePath $gitInstaller -ArgumentList $gitTool.arguments -Wait; Remove-Item $gitInstaller; Refresh-Path }
-Invoke-AndLog "git" "config --system core.longpaths true"; Write-Log "Git is ready" -Level 1 -Color Green
-foreach ($toolProperty in $dependencies.tools.PSObject.Properties) { $toolName = $toolProperty.Name; if ($toolName -in @('python', 'git', 'vs_build_tools')) { continue }; $toolConfig = $toolProperty.Value; $exeName = if ($toolName -eq "seven_zip") { "7z.exe" } else { "$($toolName).exe" }; if (-not (Get-Command $exeName -ErrorAction SilentlyContinue)) { Install-Binary-From-Zip -ToolConfig $toolConfig } else { Write-Log "$($toolConfig.name) is already installed" -Level 1 -Color Green } }
 
+# Cas spécifique pour Git (.exe installer)
+$gitTool = $dependencies.tools.git
+if (-not (Get-Command git.exe -ErrorAction SilentlyContinue)) {
+    Write-Log "Git not found. Installing..." -Level 1 -Color Yellow
+    $gitInstaller = Join-Path $env:TEMP "Git-Installer.exe"
+    Download-File -Uri $gitTool.url -OutFile $gitInstaller
+    Invoke-AndLog $gitInstaller $gitTool.arguments
+    Remove-Item $gitInstaller -ErrorAction SilentlyContinue
+    Refresh-Path
+}
+Invoke-AndLog "git" "config --system core.longpaths true"
+Write-Log "Git is ready" -Level 1 -Color Green
+
+# Cas spécifique pour 7-Zip (.exe installer)
+$sevenZipTool = $dependencies.tools.seven_zip
+if (-not (Get-Command 7z.exe -ErrorAction SilentlyContinue)) {
+    Write-Log "7-Zip not found. Installing..." -Level 1 -Color Yellow
+    $sevenZipInstaller = Join-Path $env:TEMP "7z-Installer.exe"
+    Download-File -Uri $sevenZipTool.url -OutFile $sevenZipInstaller
+    Invoke-AndLog $sevenZipInstaller $sevenZipTool.arguments
+    Remove-Item $sevenZipInstaller -ErrorAction SilentlyContinue
+    Refresh-Path
+}
+Write-Log "7-Zip is ready" -Level 1 -Color Green
+
+# Boucle générique pour les autres outils (archives .zip)
+foreach ($toolProperty in $dependencies.tools.PSObject.Properties) {
+    $toolName = $toolProperty.Name
+    # On saute les outils déjà gérés ou non pertinents pour cette boucle
+    if ($toolName -in @('python', 'git', 'vs_build_tools', 'seven_zip')) { continue }
+
+    $toolConfig = $toolProperty.Value
+    $exeName = "$($toolConfig.name).exe"
+    
+    if (-not (Get-Command $exeName -ErrorAction SilentlyContinue)) {
+        Install-Binary-From-Zip -ToolConfig $toolConfig
+    } else {
+        Write-Log "$($toolConfig.name) is already installed" -Level 1 -Color Green
+    }
+}
 # --- Step 4: Clone ComfyUI and create Venv ---
 Write-Log "Cloning ComfyUI & Creating Virtual Environment" -Level 0
 if (-not (Test-Path $comfyPath)) {
