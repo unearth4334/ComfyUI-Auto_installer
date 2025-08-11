@@ -16,6 +16,7 @@ param(
     [string]$InstallPath = (Split-Path -Path $PSScriptRoot -Parent)
 )
 $comfyPath = Join-Path $InstallPath "ComfyUI"
+$scriptPath = Join-Path $InstallPath "scripts"
 $venvPython = Join-Path $comfyPath "venv\Scripts\python.exe"
 $logPath = Join-Path $InstallPath "logs"
 $logFile = Join-Path $logPath "install_log.txt"
@@ -181,10 +182,15 @@ if (-not (Test-Path $workflowCloneDest)) {
 }
 
 # --- Step 10: Optional Model Pack Downloads ---
-Write-Log "Optional Model Pack Downloads..." -Level 0
+Write-Log "Optional Model Pack Downloads" -Level 0
+
+# Copy the base models directory if it exists
 $ModelsSource = Join-Path $comfyPath "models"
-Copy-Item -Path $ModelsSource -Destination $InstallPath -Recurse
-# This section remains largely the same as it calls other scripts
+if (Test-Path $ModelsSource) {
+    Write-Log "Copying base models directory..." -Level 1
+    Copy-Item -Path $ModelsSource -Destination $InstallPath -Recurse -Force
+}
+
 $modelPacks = @(
     @{Name="FLUX"; ScriptName="Download-FLUX-Models.ps1"},
     @{Name="WAN"; ScriptName="Download-WAN-Models.ps1"},
@@ -192,21 +198,32 @@ $modelPacks = @(
     @{Name="LTXV"; ScriptName="Download-LTXV-Models.ps1"}
 )
 $scriptsSubFolder = Join-Path $InstallPath "scripts"
+
 foreach ($pack in $modelPacks) {
     $scriptPath = Join-Path $scriptsSubFolder $pack.ScriptName
-    if (-not (Test-Path $scriptPath)) { Write-Log "Model downloader script not found: '$($pack.ScriptName)'. Skipping." -Color Red; continue }
+    if (-not (Test-Path $scriptPath)) {
+        Write-Log "Model downloader script not found: '$($pack.ScriptName)'. Skipping." -Level 1 -Color Red
+        continue 
+    }
+
     $validInput = $false
     while (-not $validInput) {
-        Write-Host "`n[33mWould you like to download $($pack.Name) models? (Y/N)[0m"
+        # On utilise Write-Log pour la question, en gardant la couleur
+        Write-Log "Would you like to download $($pack.Name) models? (Y/N)" -Level 1 -Color Yellow
         $choice = Read-Host
+
         if ($choice -eq 'Y' -or $choice -eq 'y') {
-            Write-Log "  - Launching downloader for $($pack.Name) models..." -Color Green
+            Write-Log "Launching downloader for $($pack.Name) models..." -Level 2 -Color Green
+            # L'exécution du script externe affichera ses propres logs
             & $scriptPath -InstallPath $InstallPath
             $validInput = $true
         } elseif ($choice -eq 'N' -or $choice -eq 'n') {
-            Write-Log "  - Skipping download for $($pack.Name) models." -Color Gray
+            Write-Log "Skipping download for $($pack.Name) models." -Level 2
             $validInput = $true
-        } else { Write-Host "  [31mInvalid choice. Please enter Y or N.[0m" }
+        } else {
+            # On utilise Write-Log pour le message d'erreur
+            Write-Log "Invalid choice. Please enter Y or N." -Level 2 -Color Red
+        }
     }
 }
 # --- Step 11: Finalize Permissions ---
@@ -217,6 +234,7 @@ Invoke-AndLog "icacls" "`"$InstallPath`" /grant `"BUILTIN\Users`":(OI)(CI)F /T"
 #===========================================================================
 # FINALIZATION
 #===========================================================================
+Remove-Item -Path $scriptPath -Recurse -Force
 Write-Log "-------------------------------------------------------------------------------" -Color Green
 Write-Log "Installation of ComfyUI and all nodes is complete!" -Level 0 -Color Green
 Read-Host "Press Enter to close this window."
