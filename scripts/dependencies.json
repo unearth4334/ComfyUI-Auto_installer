@@ -12,9 +12,9 @@
     },
     "seven_zip": {
       "name": "7-Zip",
-      "version": "22.01",
-      "url": "https://www.7-zip.org/a/7z2201-x64.exe",
-      "install_path": "C:\\ProgramData\\7-Zip"
+      "version": "25.01",
+      "url": "https://www.7-zip.org/a/7z2501-x64.exe",
+      "install_path": "C:\\Program Files\\7-Zip"
     },
     "aria2": {
       "name": "aria2",
