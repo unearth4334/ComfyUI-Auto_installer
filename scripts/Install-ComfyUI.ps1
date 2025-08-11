@@ -161,7 +161,7 @@ $vsTool = $dependencies.tools.vs_build_tools
 if (-not (Test-Path $vsTool.install_path)) { Write-Log "VS Build Tools not found. Installing..." -Level 1 -Color Yellow; $vsInstaller = Join-Path $env:TEMP "vs_buildtools.exe"; Download-File -Uri $vsTool.url -OutFile $vsInstaller; Start-Process -FilePath $vsInstaller -ArgumentList $vsTool.arguments -Wait; Remove-Item $vsInstaller } else { Write-Log "Visual Studio Build Tools are already installed" -Level 1 -Color Green }
 
 # --- Step 9: Download Workflows & Settings ---
-Write-Log "`nDownloading Workflows & Settings..." -Level 0
+Write-Log "Downloading Workflows & Settings..." -Level 0
 $settingsFile = $dependencies.files.comfy_settings
 $settingsDest = Join-Path $InstallPath $settingsFile.destination
 $settingsDir = Split-Path $settingsDest -Parent
@@ -175,7 +175,7 @@ if (-not (Test-Path $workflowCloneDest)) {
 }
 
 # --- Step 10: Optional Model Pack Downloads ---
-Write-Log "`nOptional Model Pack Downloads..." -Level 0
+Write-Log "Optional Model Pack Downloads..." -Level 0
 $ModelsSource = Join-Path $comfyPath "models"
 Copy-Item -Path $ModelsSource -Destination $InstallPath -Recurse
 # This section remains largely the same as it calls other scripts
