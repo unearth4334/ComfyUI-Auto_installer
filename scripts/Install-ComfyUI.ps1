@@ -37,7 +37,7 @@ function Refresh-Path { $env:Path = "$([System.Environment]::GetEnvironmentVaria
 #===========================================================================
 Write-Host "`n>>> CONFIRMATION: EXÉCUTION DU SCRIPT FINAL CORRIGÉ <<<`n" -ForegroundColor Green
 Write-Log "DEBUG: Loaded tools config: $($dependencies.tools | ConvertTo-Json -Depth 3)" -Level 3
-$global:totalSteps = 10
+$global:totalSteps = 11
 $global:currentStep = 0
 $totalCores = [int]$env:NUMBER_OF_PROCESSORS
 $optimalParallelJobs = [int][Math]::Floor(($totalCores * 3) / 4)
@@ -132,6 +132,12 @@ if (-not (Test-Path $comfyPath)) {
 } else {
     Write-Log "ComfyUI directory already exists" -Level 1 -Color Green
 }
+# Create the 'user' directory to prevent first-launch database errors
+$userFolderPath = Join-Path $comfyPath "user"
+if (-not (Test-Path $userFolderPath)) {
+    Write-Log "Creating 'user' directory to prevent database issues" -Level 1
+    New-Item -Path $userFolderPath -ItemType Directory | Out-Null
+}
 if (-not (Test-Path (Join-Path $comfyPath "venv"))) { Write-Log "Creating Python virtual environment..." -Level 1; Push-Location $comfyPath; $commandParts = $pythonCommandToUse.Split(' ', 2); $executable = $commandParts[0]; $baseArguments = if ($commandParts.Length -gt 1) { $commandParts[1] } else { "" }; Invoke-AndLog $executable "$baseArguments -m venv venv"; Pop-Location; Write-Log "Venv created successfully" -Level 2 -Color Green } else { Write-Log "Venv already exists" -Level 1 -Color Green }
 Invoke-AndLog "git" "config --global --add safe.directory `"$comfyPath`""
 
@@ -203,7 +209,11 @@ foreach ($pack in $modelPacks) {
         } else { Write-Host "  [31mInvalid choice. Please enter Y or N.[0m" }
     }
 }
-
+# --- Step 11: Finalize Permissions ---
+Write-Log "Finalizing Folder Permissions" -Level 0
+Write-Log "Applying permissions for standard users to the installation directory..." -Level 1
+Write-Log "This will allow ComfyUI to run without administrator rights." -Level 2
+Invoke-AndLog "icacls" "`"$InstallPath`" /grant `"BUILTIN\Users`":(OI)(CI)F /T"
 #===========================================================================
 # FINALIZATION
 #===========================================================================
