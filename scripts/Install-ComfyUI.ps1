@@ -86,9 +86,12 @@ if (-not (Get-Command git.exe -ErrorAction SilentlyContinue)) {
 Invoke-AndLog "git" "config --system core.longpaths true"
 Write-Log "Git is ready" -Level 1 -Color Green
 
-# Cas spécifique pour 7-Zip (.exe installer)
+# Cas spécifique pour 7-Zip (.exe installer) - Amélioré
 $sevenZipTool = $dependencies.tools.seven_zip
-if (-not (Get-Command 7z.exe -ErrorAction SilentlyContinue)) {
+$sevenZipExePath = "C:\Program Files\7-Zip\7z.exe"
+
+# On vérifie d'abord le chemin d'installation par défaut ET ensuite le PATH
+if (-not (Test-Path $sevenZipExePath) -and -not (Get-Command 7z.exe -ErrorAction SilentlyContinue)) {
     Write-Log "7-Zip not found. Installing..." -Level 1 -Color Yellow
     $sevenZipInstaller = Join-Path $env:TEMP "7z-Installer.exe"
     Download-File -Uri $sevenZipTool.url -OutFile $sevenZipInstaller
