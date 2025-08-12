@@ -11,9 +11,11 @@ $filesToDownload = @(
     @{ RepoPath = "scripts/Install-ComfyUI.ps1";       LocalPath = "scripts/Install-ComfyUI.ps1" },
     @{ RepoPath = "scripts/Update-ComfyUI.ps1";        LocalPath = "scripts/Update-ComfyUI.ps1" },
     @{ RepoPath = "scripts/Download-FLUX-Models.ps1";  LocalPath = "scripts/Download-FLUX-Models.ps1" },
-    @{ RepoPath = "scripts/Download-WAN-Models.ps1";   LocalPath = "scripts/Download-WAN-Models.ps1" },
+    @{ RepoPath = "scripts/Download-WAN2.1-Models.ps1";   LocalPath = "scripts/Download-WAN2.1-Models.ps1" },
+    @{ RepoPath = "scripts/Download-WAN2.2-Models.ps1";   LocalPath = "scripts/Download-WAN2.2-Models.ps1" },
     @{ RepoPath = "scripts/Download-HIDREAM-Models.ps1"; LocalPath = "scripts/Download-HIDREAM-Models.ps1" },
     @{ RepoPath = "scripts/Download-LTXV-Models.ps1";  LocalPath = "scripts/Download-LTXV-Models.ps1" },
+    @{ RepoPath = "scripts/Download-QWEN-Models.ps1";  LocalPath = "scripts/Download-QWEN-Models.ps1" },
 
     # Configuration Files
     @{ RepoPath = "scripts/dependencies.json";             LocalPath = "scripts/dependencies.json" },
