@@ -31,10 +31,11 @@ function Write-Log { param([string]$Message, [int]$Level = 1, [string]$Color = "
 function Invoke-AndLog {
     param(
         [string]$File,
-        [string]$Arguments
+        [string]$Arguments,
+        [switch]$Silent = $true # Par défaut, la fonction est silencieuse
     )
     $tempLogFile = Join-Path $env:TEMP ([System.Guid]::NewGuid().ToString() + ".tmp")
-    $output = "" # On initialise une variable pour garder la sortie
+    $output = ""
 
     try {
         $commandToRun = "`"$File`" $Arguments"
@@ -42,9 +43,11 @@ function Invoke-AndLog {
         Start-Process -FilePath "cmd.exe" -ArgumentList $cmdArguments -Wait -WindowStyle Hidden
         
         if (Test-Path $tempLogFile) {
-            # On lit la sortie et on la stocke dans notre variable
-            $output = Get-Content $tempLogFile -Raw 
-            Add-Content -Path $logFile -Value $output
+            $output = Get-Content $tempLogFile -Raw
+            # On n'ajoute au log que si le mode silencieux N'EST PAS activé
+            if (-not $Silent) {
+                Add-Content -Path $logFile -Value $output
+            }
         }
     } catch {
         Write-Log "FATAL ERROR trying to execute command: $commandToRun" -Level 1 -Color Red
@@ -54,8 +57,6 @@ function Invoke-AndLog {
         }
     }
     
-    # --- CORRECTION APPLIQUÉE ICI ---
-    # On retourne la sortie pour que le script puisse l'utiliser
     return $output
 }
 function Download-File { param([string]$Uri, [string]$OutFile); Write-Log "Downloading `"$($Uri.Split('/')[-1])`"" -Level 2 -Color DarkGray; Invoke-AndLog "powershell.exe" "-NoProfile -Command `"[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12; Invoke-WebRequest -Uri '$Uri' -OutFile '$OutFile'`"" }
