@@ -28,7 +28,36 @@ $dependencies = Get-Content -Raw -Path $dependenciesFile | ConvertFrom-Json
 if (-not (Test-Path $logPath)) { New-Item -ItemType Directory -Force -Path $logPath | Out-Null }
 
 function Write-Log { param([string]$Message, [int]$Level = 1, [string]$Color = "Default"); $prefix = ""; $defaultColor = "White"; $timestamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"; switch ($Level) {-2 { $prefix = "" } 0 { $global:currentStep++; $wrappedMessage = "| [Step $($global:currentStep)/$($global:totalSteps)] $Message |"; $separator = "=" * ($wrappedMessage.Length); $consoleMessage = "`n$separator`n$wrappedMessage`n$separator"; $logMessage = "[$timestamp] [Step $($global:currentStep)/$($global:totalSteps)] $Message"; $defaultColor = "Yellow" } 1 { $prefix = "  - " } 2 { $prefix = "    -> " } 3 { $prefix = "      [INFO] " } }; if ($Color -eq "Default") { $Color = $defaultColor }; if ($Level -ne 0) { $logMessage = "[$timestamp] $($prefix.Trim()) $Message"; $consoleMessage = "$prefix$Message" }; Write-Host $consoleMessage -ForegroundColor $Color; Add-Content -Path $logFile -Value $logMessage }
-function Invoke-AndLog { param([string]$File, [string]$Arguments); $tempLogFile = Join-Path $env:TEMP ([System.Guid]::NewGuid().ToString() + ".tmp"); try { $commandToRun = "`"$File`" $Arguments"; $cmdArguments = "/C `"$commandToRun > `"`"$tempLogFile`"`" 2>&1`""; Start-Process -FilePath "cmd.exe" -ArgumentList $cmdArguments -Wait -WindowStyle Hidden; if (Test-Path $tempLogFile) { $output = Get-Content $tempLogFile; Add-Content -Path $logFile -Value $output } } catch { Write-Log "FATAL ERROR trying to execute command: $commandToRun" -Level 1 -Color Red } finally { if (Test-Path $tempLogFile) { Remove-Item $tempLogFile } } }
+function Invoke-AndLog {
+    param(
+        [string]$File,
+        [string]$Arguments
+    )
+    $tempLogFile = Join-Path $env:TEMP ([System.Guid]::NewGuid().ToString() + ".tmp")
+    $output = "" # On initialise une variable pour garder la sortie
+
+    try {
+        $commandToRun = "`"$File`" $Arguments"
+        $cmdArguments = "/C `"$commandToRun > `"`"$tempLogFile`"`" 2>&1`""
+        Start-Process -FilePath "cmd.exe" -ArgumentList $cmdArguments -Wait -WindowStyle Hidden
+        
+        if (Test-Path $tempLogFile) {
+            # On lit la sortie et on la stocke dans notre variable
+            $output = Get-Content $tempLogFile -Raw 
+            Add-Content -Path $logFile -Value $output
+        }
+    } catch {
+        Write-Log "FATAL ERROR trying to execute command: $commandToRun" -Level 1 -Color Red
+    } finally {
+        if (Test-Path $tempLogFile) {
+            Remove-Item $tempLogFile
+        }
+    }
+    
+    # --- CORRECTION APPLIQUÉE ICI ---
+    # On retourne la sortie pour que le script puisse l'utiliser
+    return $output
+}
 function Download-File { param([string]$Uri, [string]$OutFile); Write-Log "Downloading `"$($Uri.Split('/')[-1])`"" -Level 2 -Color DarkGray; Invoke-AndLog "powershell.exe" "-NoProfile -Command `"[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12; Invoke-WebRequest -Uri '$Uri' -OutFile '$OutFile'`"" }
 function Install-Binary-From-Zip { param($ToolConfig); Write-Log "Processing $($ToolConfig.name)..." -Level 1; $destFolder = $ToolConfig.install_path; if (-not (Test-Path $destFolder)) { New-Item -ItemType Directory -Force -Path $destFolder | Out-Null }; $zipPath = Join-Path $env:TEMP "$($ToolConfig.name)_temp.zip"; Download-File -Uri $ToolConfig.url -OutFile $zipPath; Write-Log "Extracting zip file" -Level 2; Expand-Archive -Path $zipPath -DestinationPath $destFolder -Force; $extractedSubfolder = Get-ChildItem -Path $destFolder -Directory | Select-Object -First 1; if (($null -ne $extractedSubfolder) -and ($extractedSubfolder.Name -ne "bin")) { Write-Log "Moving contents from subfolder to destination" -Level 3; Move-Item -Path (Join-Path $extractedSubfolder.FullName "*") -Destination $destFolder -Force; Remove-Item -Path $extractedSubfolder.FullName -Recurse -Force }; $userPath = [System.Environment]::GetEnvironmentVariable("Path", "User"); if ($userPath -notlike "*$destFolder*") { Write-Log "Adding to user PATH" -Level 3; $newPath = $userPath + ";$destFolder"; [System.Environment]::SetEnvironmentVariable("Path", $newPath, "User"); $env:Path = $env:Path + ";$destFolder"} }
 function Refresh-Path { $env:Path = "$([System.Environment]::GetEnvironmentVariable("Path", "Machine"));$([System.Environment]::GetEnvironmentVariable("Path", "User"))" }
