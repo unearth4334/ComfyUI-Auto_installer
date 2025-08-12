@@ -61,8 +61,22 @@ Write-Log $banner -Level -2
 
 # --- Step 1: CUDA Check ---
 Write-Log "Checking CUDA Version" -Level 0
-$nvidiaSmiPath = "C:\Program Files\NVIDIA Corporation\NVSMI\nvidia-smi.exe"
-if (Test-Path $nvidiaSmiPath) { $cudaVersionOutput = (Invoke-AndLog $nvidiaSmiPath "--query-gpu=driver_version,cuda_version --format=csv,noheader"); Write-Log "Found CUDA Toolkit: $cudaVersionOutput" -Level 1 -Color Green } else { Write-Log "nvidia-smi not found. Assuming CUDA is installed." -Level 1 -Color Yellow }
+
+# Nouvelle logique de détection plus robuste
+$nvidiaSmiCmd = Get-Command nvidia-smi.exe -ErrorAction SilentlyContinue
+$defaultNvidiaSmiPath = "C:\Program Files\NVIDIA Corporation\NVSMI\nvidia-smi.exe"
+
+# On cherche d'abord la commande dans le PATH, SINON on vérifie le chemin par défaut
+if ($nvidiaSmiCmd -or (Test-Path $defaultNvidiaSmiPath)) {
+    # On utilise le chemin trouvé par Get-Command si possible, sinon on utilise le chemin par défaut
+    $smiExecutable = if ($nvidiaSmiCmd) { $nvidiaSmiCmd.Source } else { $defaultNvidiaSmiPath }
+    
+    Write-Log "Found nvidia-smi at '$smiExecutable'" -Level 3
+    $cudaVersionOutput = (Invoke-AndLog $smiExecutable "--query-gpu=driver_version,cuda_version --format=csv,noheader")
+    Write-Log "Found NVIDIA Driver and CUDA version: $cudaVersionOutput" -Level 1 -Color Green
+} else {
+    Write-Log "nvidia-smi.exe not found. Cannot verify CUDA version. Assuming it is installed." -Level 1 -Color Yellow
+}
 
 # --- Step 2: Python Check ---
 Write-Log "Checking for Python $($dependencies.tools.python.version)" -Level 0
