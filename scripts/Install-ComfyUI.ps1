@@ -105,13 +105,20 @@ Write-Log "7-Zip is ready" -Level 1 -Color Green
 # Boucle générique pour les autres outils (archives .zip)
 foreach ($toolProperty in $dependencies.tools.PSObject.Properties) {
     $toolName = $toolProperty.Name
-    # On saute les outils déjà gérés ou non pertinents pour cette boucle
+    # On saute les outils déjà gérés
     if ($toolName -in @('python', 'git', 'vs_build_tools', 'seven_zip')) { continue }
 
     $toolConfig = $toolProperty.Value
-    $exeName = "$($toolConfig.name).exe"
     
-    if (-not (Get-Command $exeName -ErrorAction SilentlyContinue)) {
+    # --- CORRECTION APPLIQUÉE ICI ---
+    # On gère le nom d'exécutable spécifique à aria2
+    $exeName = if ($toolName -eq "aria2") { "aria2c.exe" } else { "$($toolConfig.name).exe" }
+    
+    # On utilise le nom correct dans le chemin de détection
+    $exePath = Join-Path $toolConfig.install_path $exeName
+
+    # La détection est maintenant fiable
+    if (-not (Test-Path $exePath) -and -not (Get-Command $exeName -ErrorAction SilentlyContinue)) {
         Install-Binary-From-Zip -ToolConfig $toolConfig
     } else {
         Write-Log "$($toolConfig.name) is already installed" -Level 1 -Color Green
@@ -236,5 +243,5 @@ Invoke-AndLog "icacls" "`"$InstallPath`" /grant `"BUILTIN\Users`":(OI)(CI)F /T"
 #===========================================================================
 Remove-Item -Path $scriptPath -Recurse -Force
 Write-Log "-------------------------------------------------------------------------------" -Color Green
-Write-Log "Installation of ComfyUI and all nodes is complete!" -Level 0 -Color Green
+Write-Log "Installation of ComfyUI and all nodes is complete!" -Color Green
 Read-Host "Press Enter to close this window."
