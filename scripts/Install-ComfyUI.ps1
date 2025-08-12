@@ -89,47 +89,53 @@ $banner = @"
 Write-Log $banner -Level -2
 
 # --- Step 1: CUDA Check ---
-Write-Log "Checking Installed CUDA Toolkit Version" -Level 0
+Write-Log "Checking CUDA Version Compatibility" -Level 0
 
-# Méthode de détection la plus fiable
-$cudaVersion = $null
+# On détermine la version de CUDA requise par PyTorch depuis dependencies.json
+$requiredCudaVersion = "Unknown"
+$torchIndexUrl = $dependencies.pip_packages.torch.index_url
+if ($torchIndexUrl -match "/cu(\d+)") {
+    $cudaCode = $matches[1]
+    if ($cudaCode.Length -eq 3) {
+        $requiredCudaVersion = $cudaCode.Insert(2,'.') # Ex: 129 -> 12.9
+    } elseif ($cudaCode.Length -eq 2) {
+        $requiredCudaVersion = $cudaCode.Insert(1,'.') # Ex: 118 -> 11.8
+    }
+}
+Write-Log "PyTorch requires CUDA Toolkit v$requiredCudaVersion" -Level 1
+
+# On détecte la version réellement installée
+$installedCudaVersion = $null
 try {
-    # Méthode 1: On demande sa version au compilateur NVCC
     $nvccOutput = nvcc --version 2>&1
     if ($nvccOutput -match "release ([\d\.]+),") {
-        $cudaVersion = $matches[1]
-        Write-Log "Found CUDA Toolkit v$cudaVersion via nvcc." -Level 1 -Color Green
+        $installedCudaVersion = $matches[1]
+        Write-Log "Found installed CUDA Toolkit v$installedCudaVersion via nvcc." -Level 2
     }
-} catch {
-    Write-Log "nvcc command not found. Checking environment variables..." -Level 3
-}
+} catch { Write-Log "nvcc not found, checking other methods..." -Level 3 }
 
-if (-not $cudaVersion) {
+if (-not $installedCudaVersion) {
     try {
-        # Méthode 2: On regarde la variable d'environnement CUDA_PATH
         $cudaPath = (Get-ChildItem Env:CUDA_PATH).Value
         if ($cudaPath -match "\\v([\d\.]+)$") {
-            $cudaVersion = $matches[1]
-            Write-Log "Found CUDA Toolkit v$cudaVersion via CUDA_PATH environment variable." -Level 1 -Color Green
+            $installedCudaVersion = $matches[1]
+            Write-Log "Found installed CUDA Toolkit v$installedCudaVersion via CUDA_PATH." -Level 2
         }
-    } catch {
-        Write-Log "CUDA_PATH environment variable not found. Falling back to nvidia-smi." -Level 3
-    }
+    } catch { Write-Log "CUDA_PATH not found, falling back to nvidia-smi..." -Level 3 }
 }
 
-if (-not $cudaVersion) {
-    # Méthode 3 (repli): On regarde la version maximale supportée par le driver
-    $nvidiaSmiCmd = Get-Command nvidia-smi.exe -ErrorAction SilentlyContinue
-    if ($nvidiaSmiCmd) {
-        $fullOutput = (Invoke-AndLog $nvidiaSmiCmd.Source "")
-        if ($fullOutput -match "CUDA Version: ([\d\.]+)") {
-            $cudaVersion = "Driver supports up to $($matches[1])"
-            Write-Log "Could not find a specific CUDA Toolkit installation." -Level 1 -Color Yellow
-            Write-Log "Your NVIDIA driver supports up to CUDA $($matches[1])." -Level 2
-        }
+# --- VÉRIFICATION ET AVERTISSEMENT ---
+if ($installedCudaVersion) {
+    if ($installedCudaVersion -like "$requiredCudaVersion*") {
+        Write-Log "Installed CUDA version ($installedCudaVersion) is compatible." -Level 1 -Color Green
     } else {
-        Write-Log "No CUDA Toolkit or NVIDIA driver found. Assuming CUDA is installed." -Level 1 -Color Yellow
+        Write-Log "WARNING: Installed CUDA version ($installedCudaVersion) does not match the required version ($requiredCudaVersion)." -Level 1 -Color Yellow
+        Write-Log "This may cause issues with PyTorch. It is recommended to install CUDA Toolkit $requiredCudaVersion." -Level 2 -Color Yellow
     }
+} else {
+    # Si aucune version installée n'est trouvée, on affiche un avertissement général
+    Write-Log "Could not determine installed CUDA Toolkit version." -Level 1 -Color Yellow
+    Write-Log "Please ensure you have CUDA Toolkit v$requiredCudaVersion installed for compatibility." -Level 2
 }
 
 # --- Step 2: Python Check ---
