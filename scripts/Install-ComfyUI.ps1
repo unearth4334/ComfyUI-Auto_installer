@@ -89,22 +89,47 @@ $banner = @"
 Write-Log $banner -Level -2
 
 # --- Step 1: CUDA Check ---
-Write-Log "Checking CUDA Version" -Level 0
+Write-Log "Checking Installed CUDA Toolkit Version" -Level 0
 
-# Nouvelle logique de détection plus robuste
-$nvidiaSmiCmd = Get-Command nvidia-smi.exe -ErrorAction SilentlyContinue
-$defaultNvidiaSmiPath = "C:\Program Files\NVIDIA Corporation\NVSMI\nvidia-smi.exe"
+# Méthode de détection la plus fiable
+$cudaVersion = $null
+try {
+    # Méthode 1: On demande sa version au compilateur NVCC
+    $nvccOutput = nvcc --version 2>&1
+    if ($nvccOutput -match "release ([\d\.]+),") {
+        $cudaVersion = $matches[1]
+        Write-Log "Found CUDA Toolkit v$cudaVersion via nvcc." -Level 1 -Color Green
+    }
+} catch {
+    Write-Log "nvcc command not found. Checking environment variables..." -Level 3
+}
 
-# On cherche d'abord la commande dans le PATH, SINON on vérifie le chemin par défaut
-if ($nvidiaSmiCmd -or (Test-Path $defaultNvidiaSmiPath)) {
-    # On utilise le chemin trouvé par Get-Command si possible, sinon on utilise le chemin par défaut
-    $smiExecutable = if ($nvidiaSmiCmd) { $nvidiaSmiCmd.Source } else { $defaultNvidiaSmiPath }
-    
-    Write-Log "Found nvidia-smi at '$smiExecutable'" -Level 3
-    $cudaVersionOutput = (Invoke-AndLog $smiExecutable "--query-gpu=driver_version,cuda_version --format=csv,noheader")
-    Write-Log "Found NVIDIA Driver and CUDA version: $cudaVersionOutput" -Level 1 -Color Green
-} else {
-    Write-Log "nvidia-smi.exe not found. Cannot verify CUDA version. Assuming it is installed." -Level 1 -Color Yellow
+if (-not $cudaVersion) {
+    try {
+        # Méthode 2: On regarde la variable d'environnement CUDA_PATH
+        $cudaPath = (Get-ChildItem Env:CUDA_PATH).Value
+        if ($cudaPath -match "\\v([\d\.]+)$") {
+            $cudaVersion = $matches[1]
+            Write-Log "Found CUDA Toolkit v$cudaVersion via CUDA_PATH environment variable." -Level 1 -Color Green
+        }
+    } catch {
+        Write-Log "CUDA_PATH environment variable not found. Falling back to nvidia-smi." -Level 3
+    }
+}
+
+if (-not $cudaVersion) {
+    # Méthode 3 (repli): On regarde la version maximale supportée par le driver
+    $nvidiaSmiCmd = Get-Command nvidia-smi.exe -ErrorAction SilentlyContinue
+    if ($nvidiaSmiCmd) {
+        $fullOutput = (Invoke-AndLog $nvidiaSmiCmd.Source "")
+        if ($fullOutput -match "CUDA Version: ([\d\.]+)") {
+            $cudaVersion = "Driver supports up to $($matches[1])"
+            Write-Log "Could not find a specific CUDA Toolkit installation." -Level 1 -Color Yellow
+            Write-Log "Your NVIDIA driver supports up to CUDA $($matches[1])." -Level 2
+        }
+    } else {
+        Write-Log "No CUDA Toolkit or NVIDIA driver found. Assuming CUDA is installed." -Level 1 -Color Yellow
+    }
 }
 
 # --- Step 2: Python Check ---
