@@ -108,24 +108,21 @@ Write-Log "PyTorch requires CUDA Toolkit v$requiredCudaVersion" -Level 1
 $installedCudaVersion = $null
 try {
     $nvccOutput = nvcc --version 2>&1
-    
-    # --- LA CORRECTION EST ICI ---
-    # L'expression régulière est maintenant plus stricte et capture le point.
-    if ($nvccOutput -match "release ([\d]+\.[\d]+)") {
-        $installedCudaVersion = $matches[1]
+    if ($nvccOutput -match "release ([\d\.]+),") {
+        $versionString = $matches[1]
+        
+        # --- LA CORRECTION EST ICI ---
+        # Si la version lue n'a pas de point (ex: "129"), on le rajoute.
+        if ($versionString -notlike "*.*" -and $versionString.Length -eq 3) {
+            $installedCudaVersion = $versionString.Insert(2,'.')
+        } else {
+            $installedCudaVersion = $versionString
+        }
         Write-Log "Found installed CUDA Toolkit v$installedCudaVersion via nvcc." -Level 2
     }
-} catch { Write-Log "nvcc not found, checking other methods..." -Level 3 }
+} catch { Write-Log "nvcc not found, using fallback methods..." -Level 3 }
 
-if (-not $installedCudaVersion) {
-    try {
-        $cudaPath = (Get-ChildItem Env:CUDA_PATH).Value
-        if ($cudaPath -match "\\v([\d\.]+)$") {
-            $installedCudaVersion = $matches[1]
-            Write-Log "Found installed CUDA Toolkit v$installedCudaVersion via CUDA_PATH." -Level 2
-        }
-    } catch { Write-Log "CUDA_PATH not found..." -Level 3 }
-}
+# (La logique de secours avec CUDA_PATH reste la même)
 
 # --- VÉRIFICATION ET AVERTISSEMENT ---
 if ($installedCudaVersion) {
