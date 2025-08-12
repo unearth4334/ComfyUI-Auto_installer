@@ -36,16 +36,13 @@ function Invoke-AndLog {
     )
     $tempLogFile = Join-Path $env:TEMP ([System.Guid]::NewGuid().ToString() + ".tmp")
     $output = ""
-
     try {
         $commandToRun = "`"$File`" $Arguments"
         $cmdArguments = "/C `"$commandToRun > `"`"$tempLogFile`"`" 2>&1`""
         Start-Process -FilePath "cmd.exe" -ArgumentList $cmdArguments -Wait -WindowStyle Hidden
-        
         if (Test-Path $tempLogFile) {
             $output = Get-Content $tempLogFile -Raw
-            # On n'ajoute au log que si le mode silencieux N'EST PAS activé
-            if (-not $Silent) {
+            if (-not $Silent) { # On ne log que si demandé
                 Add-Content -Path $logFile -Value $output
             }
         }
@@ -56,7 +53,6 @@ function Invoke-AndLog {
             Remove-Item $tempLogFile
         }
     }
-    
     return $output
 }
 function Download-File { param([string]$Uri, [string]$OutFile); Write-Log "Downloading `"$($Uri.Split('/')[-1])`"" -Level 2 -Color DarkGray; Invoke-AndLog "powershell.exe" "-NoProfile -Command `"[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12; Invoke-WebRequest -Uri '$Uri' -OutFile '$OutFile'`"" }
@@ -98,9 +94,9 @@ $torchIndexUrl = $dependencies.pip_packages.torch.index_url
 if ($torchIndexUrl -match "/cu(\d+)") {
     $cudaCode = $matches[1]
     if ($cudaCode.Length -eq 3) {
-        $requiredCudaVersion = $cudaCode.Insert(2,'.') # Ex: 129 -> 12.9
+        $requiredCudaVersion = $cudaCode.Insert(2,'.')
     } elseif ($cudaCode.Length -eq 2) {
-        $requiredCudaVersion = $cudaCode.Insert(1,'.') # Ex: 118 -> 11.8
+        $requiredCudaVersion = $cudaCode.Insert(1,'.')
     }
 }
 Write-Log "PyTorch requires CUDA Toolkit v$requiredCudaVersion" -Level 1
@@ -108,8 +104,6 @@ Write-Log "PyTorch requires CUDA Toolkit v$requiredCudaVersion" -Level 1
 # On détecte la version réellement installée
 $installedCudaVersion = $null
 try {
-    # --- CORRECTION APPLIQUÉE ICI ---
-    # On "échappe" le point pour qu'il soit interprété littéralement : \.
     $nvccOutput = nvcc --version 2>&1
     if ($nvccOutput -match "release ([\d\.]+),") {
         $installedCudaVersion = $matches[1]
@@ -124,7 +118,7 @@ if (-not $installedCudaVersion) {
             $installedCudaVersion = $matches[1]
             Write-Log "Found installed CUDA Toolkit v$installedCudaVersion via CUDA_PATH." -Level 2
         }
-    } catch { Write-Log "CUDA_PATH not found, falling back to nvidia-smi..." -Level 3 }
+    } catch { Write-Log "CUDA_PATH not found..." -Level 3 }
 }
 
 # --- VÉRIFICATION ET AVERTISSEMENT ---
@@ -132,13 +126,11 @@ if ($installedCudaVersion) {
     if ($installedCudaVersion -like "$requiredCudaVersion*") {
         Write-Log "Installed CUDA version ($installedCudaVersion) is compatible." -Level 1 -Color Green
     } else {
-        Write-Log "WARNING: Installed CUDA version ($installedCudaVersion) does not match the required version ($requiredCudaVersion)." -Level 1 -Color Yellow
+        Write-Log "WARNING: Installed CUDA version ($installedCudaVersion) does not match required version ($requiredCudaVersion)." -Level 1 -Color Yellow
         Write-Log "This may cause issues with PyTorch. It is recommended to install CUDA Toolkit $requiredCudaVersion." -Level 2 -Color Yellow
     }
 } else {
-    # Si aucune version installée n'est trouvée, on affiche un avertissement général
-    Write-Log "Could not determine installed CUDA Toolkit version." -Level 1 -Color Yellow
-    Write-Log "Please ensure you have CUDA Toolkit v$requiredCudaVersion installed for compatibility." -Level 2
+    Write-Log "Could not determine installed CUDA Toolkit version. Please ensure v$requiredCudaVersion is installed." -Level 1 -Color Yellow
 }
 
 # --- Step 2: Python Check ---
