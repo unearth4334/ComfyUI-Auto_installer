@@ -107,6 +107,8 @@ Write-Log "PyTorch requires CUDA Toolkit v$requiredCudaVersion" -Level 1
 # On détecte la version réellement installée
 $installedCudaVersion = $null
 try {
+    # --- CORRECTION APPLIQUÉE ICI ---
+    # On "échappe" le point pour qu'il soit interprété littéralement : \.
     $nvccOutput = nvcc --version 2>&1
     if ($nvccOutput -match "release ([\d\.]+),") {
         $installedCudaVersion = $matches[1]
