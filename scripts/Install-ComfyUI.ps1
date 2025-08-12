@@ -74,19 +74,20 @@ $optimalParallelJobs = [int][Math]::Floor(($totalCores * 3) / 4)
 if ($optimalParallelJobs -lt 1) { $optimalParallelJobs = 1 }
 
 Clear-Host
-$banner = @"
--------------------------------------------------------------------------------
-                      __  __           ___   _ ____  ______
-                     / / / /___ ___  /   |  (_) __ \/_  __/
-                    / / / / __ `__ \/ _ \/ /| | / / /_/ / / /
+# --- Bannière ---
+Write-Log "-------------------------------------------------------------------------------"
+$asciiBanner = @'
+                      __  __               ___    _ ____  ______
+                     / / / /___ ___  ___  /   |  (_) __ \/_  __/
+                    / / / / __ `__ \/ _ \/ /| | / / /_/ / / / 
                    / /_/ / / / / / /  __/ ___ |/ / _, _/ / /
                    \____/_/ /_/ /_/\___/_/  |_/_/_/ |_| /_/
--------------------------------------------------------------------------------
-                          ComfyUI - Auto-Installer
-                                Version 3.2
--------------------------------------------------------------------------------
-"@
-Write-Log $banner -Level -2
+'@
+Write-Host $asciiBanner -ForegroundColor Cyan
+Write-Log "-------------------------------------------------------------------------------"
+Write-Log "                           ComfyUI - Auto-Installer                            " -Color Yellow
+Write-Log "                                  Version 3.2                                  " -Color White
+Write-Log "-------------------------------------------------------------------------------"
 
 # --- Step 1: CUDA Check ---
 Write-Log "Checking CUDA Version Compatibility" -Level 0
