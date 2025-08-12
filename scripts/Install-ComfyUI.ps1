@@ -33,25 +33,30 @@ function Invoke-AndLog {
         [string]$File,
         [string]$Arguments
     )
+    
+    # Chemin vers un fichier de log temporaire unique
     $tempLogFile = Join-Path $env:TEMP ([System.Guid]::NewGuid().ToString() + ".tmp")
-    $output = ""
+
     try {
+        # Exécute la commande et redirige TOUTE sa sortie vers le fichier temporaire
         $commandToRun = "`"$File`" $Arguments"
         $cmdArguments = "/C `"$commandToRun > `"`"$tempLogFile`"`" 2>&1`""
         Start-Process -FilePath "cmd.exe" -ArgumentList $cmdArguments -Wait -WindowStyle Hidden
+        
+        # Une fois la commande terminée, on lit le fichier temporaire
         if (Test-Path $tempLogFile) {
-            # On capture la sortie pour la retourner, mais on ne l'écrit PAS dans le log principal
-            $output = Get-Content $tempLogFile -Raw
+            $output = Get-Content $tempLogFile
+            # Et on l'ajoute au log principal en toute sécurité
+            Add-Content -Path $logFile -Value $output
         }
     } catch {
-        Write-Log "FATAL ERROR trying to execute command: $commandToRun" -Level 1 -Color Red
+        Write-Log "FATAL ERROR trying to execute command: $commandToRun" -Color Red
     } finally {
+        # On s'assure que le fichier temporaire est toujours supprimé
         if (Test-Path $tempLogFile) {
             Remove-Item $tempLogFile
         }
     }
-    # On retourne toujours la sortie pour les cas où on en a besoin (comme pour CUDA)
-    return $output
 }
 function Download-File { param([string]$Uri, [string]$OutFile); Write-Log "Downloading `"$($Uri.Split('/')[-1])`"" -Level 2 -Color DarkGray; Invoke-AndLog "powershell.exe" "-NoProfile -Command `"[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12; Invoke-WebRequest -Uri '$Uri' -OutFile '$OutFile'`"" }
 function Install-Binary-From-Zip { param($ToolConfig); Write-Log "Processing $($ToolConfig.name)..." -Level 1; $destFolder = $ToolConfig.install_path; if (-not (Test-Path $destFolder)) { New-Item -ItemType Directory -Force -Path $destFolder | Out-Null }; $zipPath = Join-Path $env:TEMP "$($ToolConfig.name)_temp.zip"; Download-File -Uri $ToolConfig.url -OutFile $zipPath; Write-Log "Extracting zip file" -Level 2; Expand-Archive -Path $zipPath -DestinationPath $destFolder -Force; $extractedSubfolder = Get-ChildItem -Path $destFolder -Directory | Select-Object -First 1; if (($null -ne $extractedSubfolder) -and ($extractedSubfolder.Name -ne "bin")) { Write-Log "Moving contents from subfolder to destination" -Level 3; Move-Item -Path (Join-Path $extractedSubfolder.FullName "*") -Destination $destFolder -Force; Remove-Item -Path $extractedSubfolder.FullName -Recurse -Force }; $userPath = [System.Environment]::GetEnvironmentVariable("Path", "User"); if ($userPath -notlike "*$destFolder*") { Write-Log "Adding to user PATH" -Level 3; $newPath = $userPath + ";$destFolder"; [System.Environment]::SetEnvironmentVariable("Path", $newPath, "User"); $env:Path = $env:Path + ";$destFolder"} }
@@ -83,19 +88,30 @@ $banner = @"
 "@
 Write-Log $banner -Level -2
 
+# --- Step 1: CUDA Check ---
+Write-Log "Checking CUDA Version Compatibility" -Level 0
+
+# On détermine la version de CUDA requise par PyTorch depuis dependencies.json
 $requiredCudaVersion = "Unknown"
 $torchIndexUrl = $dependencies.pip_packages.torch.index_url
 if ($torchIndexUrl -match "/cu(\d+)") {
     $cudaCode = $matches[1]
-    if ($cudaCode.Length -eq 3) { $requiredCudaVersion = $cudaCode.Insert(2,'.') } 
-    elseif ($cudaCode.Length -eq 2) { $requiredCudaVersion = $cudaCode.Insert(1,'.') }
+    if ($cudaCode.Length -eq 3) {
+        $requiredCudaVersion = $cudaCode.Insert(2,'.') # Ex: 129 -> 12.9
+    } elseif ($cudaCode.Length -eq 2) {
+        $requiredCudaVersion = $cudaCode.Insert(1,'.') # Ex: 118 -> 11.8
+    }
 }
 Write-Log "PyTorch requires CUDA Toolkit v$requiredCudaVersion" -Level 1
 
+# On détecte la version réellement installée
 $installedCudaVersion = $null
 try {
     $nvccOutput = nvcc --version 2>&1
-    if ($nvccOutput -match "release ([\d]+\.[\d]+)") { # Expression régulière corrigée
+    
+    # --- LA CORRECTION EST ICI ---
+    # L'expression régulière est maintenant plus stricte et capture le point.
+    if ($nvccOutput -match "release ([\d]+\.[\d]+)") {
         $installedCudaVersion = $matches[1]
         Write-Log "Found installed CUDA Toolkit v$installedCudaVersion via nvcc." -Level 2
     }
@@ -111,6 +127,7 @@ if (-not $installedCudaVersion) {
     } catch { Write-Log "CUDA_PATH not found..." -Level 3 }
 }
 
+# --- VÉRIFICATION ET AVERTISSEMENT ---
 if ($installedCudaVersion) {
     if ($installedCudaVersion -like "$requiredCudaVersion*") {
         Write-Log "Installed CUDA version ($installedCudaVersion) is compatible." -Level 1 -Color Green
