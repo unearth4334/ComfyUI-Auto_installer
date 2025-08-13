@@ -3,7 +3,7 @@ param(
 )
 
 # Set the base URL for the GitHub repository's raw content
-$baseUrl = "https://github.com/UmeAiRT/ComfyUI-Auto_installer/raw/refactor-installer-config/"
+$baseUrl = "https://github.com/UmeAiRT/ComfyUI-Auto_installer/raw/"
 
 # Define the list of files to download
 $filesToDownload = @(

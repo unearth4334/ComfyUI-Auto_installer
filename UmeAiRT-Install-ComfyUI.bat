@@ -26,7 +26,7 @@ if "%InstallPath:~-1%"=="\" set "InstallPath=%InstallPath:~0,-1%"
 
 set "ScriptsFolder=%InstallPath%\scripts"
 set "BootstrapScript=%ScriptsFolder%\Bootstrap-Downloader.ps1"
-set "BootstrapUrl=https://github.com/UmeAiRT/ComfyUI-Auto_installer/raw/refactor-installer-config/scripts/Bootstrap-Downloader.ps1"
+set "BootstrapUrl=https://github.com/UmeAiRT/ComfyUI-Auto_installer/raw/scripts/Bootstrap-Downloader.ps1"
 
 :: Create scripts folder if it doesn't exist
 if not exist "%ScriptsFolder%" (
