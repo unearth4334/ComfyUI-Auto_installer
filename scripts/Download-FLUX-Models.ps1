@@ -1,6 +1,6 @@
 param(
-    # Accepte le chemin d'installation du script principal.
-    # Par défaut, utilise son propre dossier s'il est lancé seul.
+    # Accepts the installation path from the main script.
+    # Defaults to its own directory if run standalone.
     [string]$InstallPath = $PSScriptRoot
 )
 
@@ -16,26 +16,27 @@ param(
 # SECTION 1: HELPER FUNCTIONS & SETUP
 #===========================================================================
 $InstallPath = $InstallPath.Trim('"')
-function Write-Log { 
-    param([string]$Message, [string]$Color = "White") 
-    # Utilise $InstallPath (passé en argument) pour trouver le bon dossier de logs
+function Write-Log {
+    param([string]$Message, [string]$Color = "White")
+    # Use the $InstallPath (passed as an argument) to find the correct log directory.
     $logFile = Join-Path $InstallPath "logs\install_log.txt"
     $formattedMessage = "[$([DateTime]::Now.ToString('yyyy-MM-dd HH:mm:ss'))] [ModelDownloader] $Message"
     Write-Host $Message -ForegroundColor $Color
     Add-Content -Path $logFile -Value $formattedMessage -ErrorAction SilentlyContinue
 }
 
-function Invoke-AndLog { 
-    param([string]$File, [string]$Arguments) 
-    # Utilise $InstallPath pour trouver le bon dossier de logs
+function Invoke-AndLog {
+    param([string]$File, [string]$Arguments)
+    # Use the $InstallPath to find the correct log directory.
     $logFile = Join-Path $InstallPath "logs\install_log.txt"
     $commandToRun = "`"$File`" $Arguments"
     $cmdArguments = "/C `"$commandToRun >> `"`"$logFile`"`" 2>&1`""
-    try { 
-        Start-Process -FilePath "cmd.exe" -ArgumentList $cmdArguments -Wait -WindowStyle Hidden 
-    } catch { 
-        Write-Log "FATAL ERROR trying to execute command: $commandToRun" -Color Red 
-    } 
+    try {
+        Start-Process -FilePath "cmd.exe" -ArgumentList $cmdArguments -Wait -WindowStyle Hidden
+    }
+    catch {
+        Write-Log "FATAL ERROR trying to execute command: $commandToRun" -Color Red
+    }
 }
 
 function Download-File {
@@ -45,7 +46,7 @@ function Download-File {
         return
     }
 
-    # Se présenter comme un navigateur moderne pour éviter les blocages
+    # Present as a modern browser to avoid being blocked.
     $modernUserAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36"
     $fileName = Split-Path -Path $Uri -Leaf
 
@@ -55,25 +56,25 @@ function Download-File {
         Invoke-AndLog "aria2c" $aria_args
     } else {
         Write-Log "Aria2 not found. Falling back to standard download: $fileName" -Color Yellow
-        # On ajoute le User-Agent à Invoke-WebRequest
+        # Add the User-Agent to Invoke-WebRequest.
         Invoke-WebRequest -Uri $Uri -OutFile $OutFile -UserAgent $modernUserAgent
     }
 }
 
-function Ask-Question { 
-    param([string]$Prompt, [string[]]$Choices, [string[]]$ValidAnswers) 
+function Ask-Question {
+    param([string]$Prompt, [string[]]$Choices, [string[]]$ValidAnswers)
     $choice = ''
-    while ($choice -notin $ValidAnswers) { 
+    while ($choice -notin $ValidAnswers) {
         Write-Log "`n$Prompt" -Color Yellow
-        foreach ($line in $Choices) { 
-            Write-Host "  $line" -ForegroundColor Green 
+        foreach ($line in $Choices) {
+            Write-Host "  $line" -ForegroundColor Green
         }
         $choice = (Read-Host "Enter your choice and press Enter").ToUpper()
-        if ($choice -notin $ValidAnswers) { 
-            Write-Log "Invalid choice. Please try again." -Color Red 
-        } 
+        if ($choice -notin $ValidAnswers) {
+            Write-Log "Invalid choice. Please try again." -Color Red
+        }
     }
-    return $choice 
+    return $choice
 }
 
 #===========================================================================
@@ -82,8 +83,8 @@ function Ask-Question {
 
 $modelsPath = Join-Path $InstallPath "models"
 if (-not (Test-Path $modelsPath)) {
-    Write-Log "Le dossier des modèles n'existe pas, création en cours..." -Color Yellow
-    # Crée le dossier (et tous les dossiers parents nécessaires grâce à -Force)
+    Write-Log "Models directory does not exist, creating it..." -Color Yellow
+    # Create the directory (and any necessary parent directories thanks to -Force).
     New-Item -Path $modelsPath -ItemType Directory -Force | Out-Null
 }
 
@@ -99,30 +100,30 @@ if (Get-Command 'nvidia-smi' -ErrorAction SilentlyContinue) {
             $gpuMemoryMiB = ($gpuInfoParts[1] -replace ' MiB').Trim()
             $gpuMemoryGiB = [math]::Round([int]$gpuMemoryMiB / 1024)
             
-            Write-Log "GPU : $gpuName" -Color Green
-            Write-Log "VRAM : $gpuMemoryGiB GB" -Color Green
+            Write-Log "GPU: $gpuName" -Color Green
+            Write-Log "VRAM: $gpuMemoryGiB GB" -Color Green
             
             if ($gpuMemoryGiB -ge 30) {
-                Write-Log "Recommandation: fp16" -Color Cyan
+                Write-Log "Recommendation: fp16" -Color Cyan
             } elseif ($gpuMemoryGiB -ge 18) {
-                Write-Log "Recommandation: fp8 or GGUF Q8" -Color Cyan
+                Write-Log "Recommendation: fp8 or GGUF Q8" -Color Cyan
             } elseif ($gpuMemoryGiB -ge 16) {
-                Write-Log "Recommandation: GGUF Q6" -Color Cyan
+                Write-Log "Recommendation: GGUF Q6" -Color Cyan
             }elseif ($gpuMemoryGiB -ge 14) {
-                Write-Log "Recommandation: GGUF Q5" -Color Cyan
+                Write-Log "Recommendation: GGUF Q5" -Color Cyan
             }elseif ($gpuMemoryGiB -ge 12) {
-                Write-Log "Recommandation: GGUF Q4" -Color Cyan
+                Write-Log "Recommendation: GGUF Q4" -Color Cyan
             }elseif ($gpuMemoryGiB -ge 8) {
-                Write-Log "Recommandation: GGUF Q3" -Color Cyan
+                Write-Log "Recommendation: GGUF Q3" -Color Cyan
             }else {
-                Write-Log "Recommandation: GGUF Q2" -Color Cyan
+                Write-Log "Recommendation: GGUF Q2" -Color Cyan
             }
         }
     } catch {
-        Write-Log "Impossible de récupérer les informations GPU. Erreur: $($_.Exception.Message)" -Color Red
+        Write-Log "Could not retrieve GPU information. Error: $($_.Exception.Message)" -Color Red
     }
 } else {
-    Write-Log "Aucun GPU NVIDIA detecte (nvidia-smi introuvable). Choisissez selon votre matériel." -Color Gray
+    Write-Log "No NVIDIA GPU detected (nvidia-smi not found). Please choose based on your hardware." -Color Gray
 }
 Write-Log "-------------------------------------------------------------------------------"
 
@@ -139,7 +140,7 @@ $loraChoice = Ask-Question -Prompt "Do you want to download UmeAiRT LoRAs?" -Cho
 # --- Download files based on answers ---
 Write-Log "`nStarting downloads based on your choices..." -Color Cyan
 
-# Définir tous les chemins une seule fois
+# Define all paths once.
 $baseUrl = "https://huggingface.co/UmeAiRT/ComfyUI-Auto_installer/resolve/main/models"
 $fluxDir = Join-Path $modelsPath "diffusion_models\FLUX"
 $clipDir = Join-Path $modelsPath "clip"
@@ -151,7 +152,7 @@ $styleDir = Join-Path $modelsPath "style_models"
 $loraDir = Join-Path $modelsPath "loras\FLUX"
 $upscaleDir = Join-Path $modelsPath "upscale_models"
 
-# Créer tous les dossiers nécessaires en une seule fois
+# Create all necessary directories at once.
 $requiredDirs = @($fluxDir, $clipDir, $vaeDir, $unetFluxDir, $controlnetDir, $pulidDir, $styleDir, $loraDir)
 foreach ($dir in $requiredDirs) {
     if (-not (Test-Path $dir)) {
@@ -159,7 +160,7 @@ foreach ($dir in $requiredDirs) {
     }
 }
 
-# Vérifier si un téléchargement est nécessaire pour télécharger les fichiers communs
+# Check if any downloads are needed before downloading common files.
 $doDownload = ($fluxChoice -ne 'D' -or $ggufChoice -ne 'H' -or $schnellChoice -eq 'A' -or $controlnetChoice -ne 'G' -or $pulidChoice -eq 'A' -or $loraChoice -eq 'A')
 
 if ($doDownload) {
@@ -179,12 +180,29 @@ if ($fluxChoice -in 'B', 'C') {
 }
 
 # GGUF Models
-if ($ggufChoice -in 'A','G') { Download-File -Uri "$baseUrl/clip/t5-v1_1-xxl-encoder-Q8_0.gguf" -OutFile (Join-Path $clipDir "t5-v1_1-xxl-encoder-Q8_0.gguf"); Download-File -Uri "$baseUrl/unet/FLUX/flux1-dev-Q8_0.gguf" -OutFile (Join-Path $unetFluxDir "flux1-dev-Q8_0.gguf") }
-if ($ggufChoice -in 'B','G') { Download-File -Uri "$baseUrl/clip/t5-v1_1-xxl-encoder-Q6_K.gguf" -OutFile (Join-Path $clipDir "t5-v1_1-xxl-encoder-Q6_K.gguf"); Download-File -Uri "$baseUrl/unet/FLUX/flux1-dev-Q6_K.gguf" -OutFile (Join-Path $unetFluxDir "flux1-dev-Q6_K.gguf") }
-if ($ggufChoice -in 'C','G') { Download-File -Uri "$baseUrl/clip/t5-v1_1-xxl-encoder-Q5_K_M.gguf" -OutFile (Join-Path $clipDir "t5-v1_1-xxl-encoder-Q5_K_M.gguf"); Download-File -Uri "$baseUrl/unet/FLUX/flux1-dev-Q5_K_S.gguf" -OutFile (Join-Path $unetFluxDir "flux1-dev-Q5_K_S.gguf") }
-if ($ggufChoice -in 'D','G') { Download-File -Uri "$baseUrl/clip/t5-v1_1-xxl-encoder-Q4_K_S.gguf" -OutFile (Join-Path $clipDir "t5-v1_1-xxl-encoder-Q4_K_S.gguf"); Download-File -Uri "$baseUrl/unet/FLUX/flux1-dev-Q4_K_S.gguf" -OutFile (Join-Path $unetFluxDir "flux1-dev-Q4_K_S.gguf") }
-if ($ggufChoice -in 'E','G') { Download-File -Uri "$baseUrl/clip/t5-v1_1-xxl-encoder-Q3_K_S.gguf" -OutFile (Join-Path $clipDir "t5-v1_1-xxl-encoder-Q3_K_S.gguf"); Download-File -Uri "$baseUrl/unet/FLUX/flux1-dev-Q3_K_S.gguf" -OutFile (Join-Path $unetFluxDir "flux1-dev-Q3_K_S.gguf") }
-if ($ggufChoice -in 'F','G') { Download-File -Uri "$baseUrl/unet/FLUX/flux1-dev-Q2_K.gguf" -OutFile (Join-Path $unetFluxDir "flux1-dev-Q2_K.gguf") }
+if ($ggufChoice -in 'A', 'G') {
+    Download-File -Uri "$baseUrl/clip/t5-v1_1-xxl-encoder-Q8_0.gguf" -OutFile (Join-Path $clipDir "t5-v1_1-xxl-encoder-Q8_0.gguf")
+    Download-File -Uri "$baseUrl/unet/FLUX/flux1-dev-Q8_0.gguf" -OutFile (Join-Path $unetFluxDir "flux1-dev-Q8_0.gguf")
+}
+if ($ggufChoice -in 'B', 'G') {
+    Download-File -Uri "$baseUrl/clip/t5-v1_1-xxl-encoder-Q6_K.gguf" -OutFile (Join-Path $clipDir "t5-v1_1-xxl-encoder-Q6_K.gguf")
+    Download-File -Uri "$baseUrl/unet/FLUX/flux1-dev-Q6_K.gguf" -OutFile (Join-Path $unetFluxDir "flux1-dev-Q6_K.gguf")
+}
+if ($ggufChoice -in 'C', 'G') {
+    Download-File -Uri "$baseUrl/clip/t5-v1_1-xxl-encoder-Q5_K_M.gguf" -OutFile (Join-Path $clipDir "t5-v1_1-xxl-encoder-Q5_K_M.gguf")
+    Download-File -Uri "$baseUrl/unet/FLUX/flux1-dev-Q5_K_S.gguf" -OutFile (Join-Path $unetFluxDir "flux1-dev-Q5_K_S.gguf")
+}
+if ($ggufChoice -in 'D', 'G') {
+    Download-File -Uri "$baseUrl/clip/t5-v1_1-xxl-encoder-Q4_K_S.gguf" -OutFile (Join-Path $clipDir "t5-v1_1-xxl-encoder-Q4_K_S.gguf")
+    Download-File -Uri "$baseUrl/unet/FLUX/flux1-dev-Q4_K_S.gguf" -OutFile (Join-Path $unetFluxDir "flux1-dev-Q4_K_S.gguf")
+}
+if ($ggufChoice -in 'E', 'G') {
+    Download-File -Uri "$baseUrl/clip/t5-v1_1-xxl-encoder-Q3_K_S.gguf" -OutFile (Join-Path $clipDir "t5-v1_1-xxl-encoder-Q3_K_S.gguf")
+    Download-File -Uri "$baseUrl/unet/FLUX/flux1-dev-Q3_K_S.gguf" -OutFile (Join-Path $unetFluxDir "flux1-dev-Q3_K_S.gguf")
+}
+if ($ggufChoice -in 'F', 'G') {
+    Download-File -Uri "$baseUrl/unet/FLUX/flux1-dev-Q2_K.gguf" -OutFile (Join-Path $unetFluxDir "flux1-dev-Q2_K.gguf")
+}
 
 # Schnell Model
 if ($schnellChoice -eq 'A') {

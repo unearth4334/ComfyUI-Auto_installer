@@ -18,11 +18,10 @@ title UmeAiRT ComfyUI Installer
 echo [OK] Administrator privileges confirmed.
 echo.
 
-:: DEBUT DE LA CORRECTION
-:: Crée une variable de chemin "propre" sans la barre oblique inversée finale
+:: Set a "clean" install path variable by removing any trailing backslash.
+:: This prevents potential issues with path concatenation later in the script.
 set "InstallPath=%~dp0"
 if "%InstallPath:~-1%"=="\" set "InstallPath=%InstallPath:~0,-1%"
-:: FIN DE LA CORRECTION
 
 set "ScriptsFolder=%InstallPath%\scripts"
 set "BootstrapScript=%ScriptsFolder%\Bootstrap-Downloader.ps1"
@@ -40,7 +39,7 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "[Net.ServicePointMan
 
 :: Run the bootstrap script to download all other files
 echo [INFO] Running the bootstrap script to download all required files...
-:: CORRECTION: Utilisation de la variable de chemin propre
+:: Pass the clean install path to the PowerShell script.
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File "%BootstrapScript%" -InstallPath "%InstallPath%"
 echo [OK] Bootstrap download complete.
 echo.
@@ -50,7 +49,7 @@ echo.
 :: ============================================================================
 echo [INFO] Launching the main installation script...
 echo.
-:: CORRECTION: Utilisation de la variable de chemin propre
+:: Pass the clean install path to the PowerShell script.
 powershell.exe -ExecutionPolicy Bypass -File "%ScriptsFolder%\Install-ComfyUI.ps1" -InstallPath "%InstallPath%"
 
 echo.
