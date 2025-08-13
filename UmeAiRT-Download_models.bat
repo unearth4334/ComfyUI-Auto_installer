@@ -31,38 +31,38 @@ if /i "%CHOICE%"=="5" goto :DOWNLOAD_LTXV
 if /i "%CHOICE%"=="6" goto :DOWNLOAD_QWEN
 if /i "%CHOICE%"=="Q" goto :EOF
 
-echo Choix invalide. Veuillez reessayer.
+echo Invalid choice. Please try again.
 pause
 goto :MENU
 
 
 :DOWNLOAD_FLUX
-echo Launch of the download of FLUX models...
+echo Starting download of FLUX models...
 powershell.exe -ExecutionPolicy Bypass -File "%~dp0scripts\Download-FLUX-Models.ps1" -InstallPath "%~dp0"
 goto :END
 
 :DOWNLOAD_WAN2.1
-echo Launch of WAN template download...
+echo Starting download of WAN 2.1 models...
 powershell.exe -ExecutionPolicy Bypass -File "%~dp0scripts\Download-WAN2.1-Models.ps1" -InstallPath "%~dp0"
 goto :END
 
 :DOWNLOAD_WAN2.2
-echo Launch of WAN template download...
+echo Starting download of WAN 2.2 models...
 powershell.exe -ExecutionPolicy Bypass -File "%~dp0scripts\Download-WAN2.2-Models.ps1" -InstallPath "%~dp0"
 goto :END
 
 :DOWNLOAD_HIDREAM
-echo Launch of HIDREAM model downloads...
+echo Starting download of HIDREAM models...
 powershell.exe -ExecutionPolicy Bypass -File "%~dp0scripts\Download-HIDREAM-Models.ps1" -InstallPath "%~dp0"
 goto :END
 
 :DOWNLOAD_LTXV
-echo LTXV model download launch...
+echo Starting download of LTXV models...
 powershell.exe -ExecutionPolicy Bypass -File "%~dp0scripts\Download-LTXV-Models.ps1" -InstallPath "%~dp0"
 goto :END
 
 :DOWNLOAD_QWEN
-echo Launch of WAN template download...
+echo Starting download of QWEN models...
 powershell.exe -ExecutionPolicy Bypass -File "%~dp0scripts\Download-QWEN-Models.ps1" -InstallPath "%~dp0"
 goto :END
 

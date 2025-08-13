@@ -27,45 +27,105 @@ if (-not (Test-Path $dependenciesFile)) { Write-Host "FATAL: dependencies.json n
 $dependencies = Get-Content -Raw -Path $dependenciesFile | ConvertFrom-Json
 if (-not (Test-Path $logPath)) { New-Item -ItemType Directory -Force -Path $logPath | Out-Null }
 
-function Write-Log { param([string]$Message, [int]$Level = 1, [string]$Color = "Default"); $prefix = ""; $defaultColor = "White"; $timestamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"; switch ($Level) {-2 { $prefix = "" } 0 { $global:currentStep++; $wrappedMessage = "| [Step $($global:currentStep)/$($global:totalSteps)] $Message |"; $separator = "=" * ($wrappedMessage.Length); $consoleMessage = "`n$separator`n$wrappedMessage`n$separator"; $logMessage = "[$timestamp] [Step $($global:currentStep)/$($global:totalSteps)] $Message"; $defaultColor = "Yellow" } 1 { $prefix = "  - " } 2 { $prefix = "    -> " } 3 { $prefix = "      [INFO] " } }; if ($Color -eq "Default") { $Color = $defaultColor }; if ($Level -ne 0) { $logMessage = "[$timestamp] $($prefix.Trim()) $Message"; $consoleMessage = "$prefix$Message" }; Write-Host $consoleMessage -ForegroundColor $Color; Add-Content -Path $logFile -Value $logMessage }
+function Write-Log {
+    param([string]$Message, [int]$Level = 1, [string]$Color = "Default")
+    $prefix = ""
+    $defaultColor = "White"
+    $timestamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
+    switch ($Level) {
+        -2 { $prefix = "" }
+        0 {
+            $global:currentStep++
+            $wrappedMessage = "| [Step $($global:currentStep)/$($global:totalSteps)] $Message |"
+            $separator = "=" * ($wrappedMessage.Length)
+            $consoleMessage = "`n$separator`n$wrappedMessage`n$separator"
+            $logMessage = "[$timestamp] [Step $($global:currentStep)/$($global:totalSteps)] $Message"
+            $defaultColor = "Yellow"
+        }
+        1 { $prefix = "  - " }
+        2 { $prefix = "    -> " }
+        3 { $prefix = "      [INFO] " }
+    }
+    if ($Color -eq "Default") { $Color = $defaultColor }
+    if ($Level -ne 0) {
+        $logMessage = "[$timestamp] $($prefix.Trim()) $Message"
+        $consoleMessage = "$prefix$Message"
+    }
+    Write-Host $consoleMessage -ForegroundColor $Color
+    Add-Content -Path $logFile -Value $logMessage
+}
+
 function Invoke-AndLog {
     param(
         [string]$File,
         [string]$Arguments
     )
     
-    # Chemin vers un fichier de log temporaire unique
+    # Path to a unique temporary log file.
     $tempLogFile = Join-Path $env:TEMP ([System.Guid]::NewGuid().ToString() + ".tmp")
 
     try {
-        # Exécute la commande et redirige TOUTE sa sortie vers le fichier temporaire
+        # Execute the command and redirect ALL of its output to the temporary file.
         $commandToRun = "`"$File`" $Arguments"
         $cmdArguments = "/C `"$commandToRun > `"`"$tempLogFile`"`" 2>&1`""
         Start-Process -FilePath "cmd.exe" -ArgumentList $cmdArguments -Wait -WindowStyle Hidden
         
-        # Une fois la commande terminée, on lit le fichier temporaire
+        # Once the command is complete, read the temporary file.
         if (Test-Path $tempLogFile) {
             $output = Get-Content $tempLogFile
-            # Et on l'ajoute au log principal en toute sécurité
+            # Append the output to the main log file.
             Add-Content -Path $logFile -Value $output
         }
     } catch {
         Write-Log "FATAL ERROR trying to execute command: $commandToRun" -Color Red
     } finally {
-        # On s'assure que le fichier temporaire est toujours supprimé
+        # Ensure the temporary file is always deleted.
         if (Test-Path $tempLogFile) {
             Remove-Item $tempLogFile
         }
     }
 }
-function Download-File { param([string]$Uri, [string]$OutFile); Write-Log "Downloading `"$($Uri.Split('/')[-1])`"" -Level 2 -Color DarkGray; Invoke-AndLog "powershell.exe" "-NoProfile -Command `"[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12; Invoke-WebRequest -Uri '$Uri' -OutFile '$OutFile'`"" }
-function Install-Binary-From-Zip { param($ToolConfig); Write-Log "Processing $($ToolConfig.name)..." -Level 1; $destFolder = $ToolConfig.install_path; if (-not (Test-Path $destFolder)) { New-Item -ItemType Directory -Force -Path $destFolder | Out-Null }; $zipPath = Join-Path $env:TEMP "$($ToolConfig.name)_temp.zip"; Download-File -Uri $ToolConfig.url -OutFile $zipPath; Write-Log "Extracting zip file" -Level 2; Expand-Archive -Path $zipPath -DestinationPath $destFolder -Force; $extractedSubfolder = Get-ChildItem -Path $destFolder -Directory | Select-Object -First 1; if (($null -ne $extractedSubfolder) -and ($extractedSubfolder.Name -ne "bin")) { Write-Log "Moving contents from subfolder to destination" -Level 3; Move-Item -Path (Join-Path $extractedSubfolder.FullName "*") -Destination $destFolder -Force; Remove-Item -Path $extractedSubfolder.FullName -Recurse -Force }; $userPath = [System.Environment]::GetEnvironmentVariable("Path", "User"); if ($userPath -notlike "*$destFolder*") { Write-Log "Adding to user PATH" -Level 3; $newPath = $userPath + ";$destFolder"; [System.Environment]::SetEnvironmentVariable("Path", $newPath, "User"); $env:Path = $env:Path + ";$destFolder"} }
-function Refresh-Path { $env:Path = "$([System.Environment]::GetEnvironmentVariable("Path", "Machine"));$([System.Environment]::GetEnvironmentVariable("Path", "User"))" }
+
+function Download-File {
+    param([string]$Uri, [string]$OutFile)
+    Write-Log "Downloading `"$($Uri.Split('/')[-1])`"" -Level 2 -Color DarkGray
+    Invoke-AndLog "powershell.exe" "-NoProfile -Command `"[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12; Invoke-WebRequest -Uri '$Uri' -OutFile '$OutFile'`""
+}
+
+function Install-Binary-From-Zip {
+    param($ToolConfig)
+    Write-Log "Processing $($ToolConfig.name)..." -Level 1
+    $destFolder = $ToolConfig.install_path
+    if (-not (Test-Path $destFolder)) {
+        New-Item -ItemType Directory -Force -Path $destFolder | Out-Null
+    }
+    $zipPath = Join-Path $env:TEMP "$($ToolConfig.name)_temp.zip"
+    Download-File -Uri $ToolConfig.url -OutFile $zipPath
+    Write-Log "Extracting zip file" -Level 2
+    Expand-Archive -Path $zipPath -DestinationPath $destFolder -Force
+    $extractedSubfolder = Get-ChildItem -Path $destFolder -Directory | Select-Object -First 1
+    if (($null -ne $extractedSubfolder) -and ($extractedSubfolder.Name -ne "bin")) {
+        Write-Log "Moving contents from subfolder to destination" -Level 3
+        Move-Item -Path (Join-Path $extractedSubfolder.FullName "*") -Destination $destFolder -Force
+        Remove-Item -Path $extractedSubfolder.FullName -Recurse -Force
+    }
+    $userPath = [System.Environment]::GetEnvironmentVariable("Path", "User")
+    if ($userPath -notlike "*$destFolder*") {
+        Write-Log "Adding to user PATH" -Level 3
+        $newPath = $userPath + ";$destFolder"
+        [System.Environment]::SetEnvironmentVariable("Path", $newPath, "User")
+        $env:Path = $env:Path + ";$destFolder"
+    }
+}
+
+function Refresh-Path {
+    $env:Path = "$([System.Environment]::GetEnvironmentVariable("Path", "Machine"));$([System.Environment]::GetEnvironmentVariable("Path", "User"))"
+}
 
 #===========================================================================
 # SECTION 2: MAIN SCRIPT EXECUTION
 #===========================================================================
-Write-Host "`n>>> CONFIRMATION: EXÉCUTION DU SCRIPT FINAL CORRIGÉ <<<`n" -ForegroundColor Green
+Write-Host "`n>>> CONFIRMATION: RUNNING FINAL SCRIPT <<<`n" -ForegroundColor Green
 Write-Log "DEBUG: Loaded tools config: $($dependencies.tools | ConvertTo-Json -Depth 3)" -Level 3
 $global:totalSteps = 11
 $global:currentStep = 0
@@ -92,28 +152,28 @@ Write-Host "--------------------------------------------------------------------
 # --- Step 1: CUDA Check ---
 Write-Log "Checking CUDA Version Compatibility" -Level 0
 
-# On détermine la version de CUDA requise par PyTorch depuis dependencies.json
+# Determine the required CUDA version from the PyTorch dependency URL.
 $requiredCudaVersion = "Unknown"
 $torchIndexUrl = $dependencies.pip_packages.torch.index_url
 if ($torchIndexUrl -match "/cu(\d+)") {
     $cudaCode = $matches[1]
     if ($cudaCode.Length -eq 3) {
-        $requiredCudaVersion = $cudaCode.Insert(2,'.') # Ex: 129 -> 12.9
+        $requiredCudaVersion = $cudaCode.Insert(2,'.') # e.g., 129 -> 12.9
     } elseif ($cudaCode.Length -eq 2) {
-        $requiredCudaVersion = $cudaCode.Insert(1,'.') # Ex: 118 -> 11.8
+        $requiredCudaVersion = $cudaCode.Insert(1,'.') # e.g., 118 -> 11.8
     }
 }
 Write-Log "PyTorch requires CUDA Toolkit v$requiredCudaVersion" -Level 1
 
-# On détecte la version réellement installée
+# Detect the currently installed CUDA version.
 $installedCudaVersion = $null
 try {
     $nvccOutput = nvcc --version 2>&1
     if ($nvccOutput -match "release ([\d\.]+),") {
         $versionString = $matches[1]
         
-        # --- LA CORRECTION EST ICI ---
-        # Si la version lue n'a pas de point (ex: "129"), on le rajoute.
+        # --- FIX ---
+        # If the version string has no dot (e.g., "129"), add one.
         if ($versionString -notlike "*.*" -and $versionString.Length -eq 3) {
             $installedCudaVersion = $versionString.Insert(2,'.')
         } else {
@@ -123,9 +183,9 @@ try {
     }
 } catch { Write-Log "nvcc not found, using fallback methods..." -Level 3 }
 
-# (La logique de secours avec CUDA_PATH reste la même)
+# (Fallback logic using CUDA_PATH remains the same)
 
-# --- VÉRIFICATION ET AVERTISSEMENT ---
+# --- VERIFICATION AND WARNING ---
 if ($installedCudaVersion) {
     if ($installedCudaVersion -like "$requiredCudaVersion*") {
         Write-Log "Installed CUDA version ($installedCudaVersion) is compatible." -Level 1 -Color Green
@@ -139,15 +199,47 @@ if ($installedCudaVersion) {
 
 # --- Step 2: Python Check ---
 Write-Log "Checking for Python $($dependencies.tools.python.version)" -Level 0
-$pythonCommandToUse = $null; $requiredPythonVersion = $dependencies.tools.python.version
-try { $versionString = (py "-$requiredPythonVersion" --version 2>&1); if ($versionString -like "Python $requiredPythonVersion*") { Write-Log "Found Python via 'py.exe' launcher" -Level 1 -Color Green; $pythonCommandToUse = "py -$requiredPythonVersion" } } catch { Write-Log "py.exe launcher check failed" -Level 3 }
-if (-not $pythonCommandToUse) { $pythonExe = Get-Command python -ErrorAction SilentlyContinue; if ($pythonExe) { $versionString = (python --version 2>&1); Write-Log "Found default Python: $versionString" -Level 1; if ($versionString -like "Python $requiredPythonVersion*") { Write-Log "Default Python is the correct version" -Level 2 -Color Green; $pythonCommandToUse = "python" } } }
-if (-not $pythonCommandToUse) { Write-Log "Python $requiredPythonVersion not found. Installing..." -Level 1 -Color Yellow; $pythonInstallerPath = Join-Path $env:TEMP "python-installer.exe"; Download-File -Uri $dependencies.tools.python.url -OutFile $pythonInstallerPath; Write-Log "Running installer..." -Level 2; Start-Process -FilePath $pythonInstallerPath -ArgumentList $dependencies.tools.python.arguments -Wait; Remove-Item $pythonInstallerPath; Refresh-Path; $pythonCommandToUse = "py -$requiredPythonVersion" }
+$pythonCommandToUse = $null
+$requiredPythonVersion = $dependencies.tools.python.version
+
+try {
+    $versionString = (py "-$requiredPythonVersion" --version 2>&1)
+    if ($versionString -like "Python $requiredPythonVersion*") {
+        Write-Log "Found Python via 'py.exe' launcher" -Level 1 -Color Green
+        $pythonCommandToUse = "py -$requiredPythonVersion"
+    }
+}
+catch {
+    Write-Log "py.exe launcher check failed" -Level 3
+}
+
+if (-not $pythonCommandToUse) {
+    $pythonExe = Get-Command python -ErrorAction SilentlyContinue
+    if ($pythonExe) {
+        $versionString = (python --version 2>&1)
+        Write-Log "Found default Python: $versionString" -Level 1
+        if ($versionString -like "Python $requiredPythonVersion*") {
+            Write-Log "Default Python is the correct version" -Level 2 -Color Green
+            $pythonCommandToUse = "python"
+        }
+    }
+}
+
+if (-not $pythonCommandToUse) {
+    Write-Log "Python $requiredPythonVersion not found. Installing..." -Level 1 -Color Yellow
+    $pythonInstallerPath = Join-Path $env:TEMP "python-installer.exe"
+    Download-File -Uri $dependencies.tools.python.url -OutFile $pythonInstallerPath
+    Write-Log "Running installer..." -Level 2
+    Start-Process -FilePath $pythonInstallerPath -ArgumentList $dependencies.tools.python.arguments -Wait
+    Remove-Item $pythonInstallerPath
+    Refresh-Path
+    $pythonCommandToUse = "py -$requiredPythonVersion"
+}
 
 # --- Step 3: Required Tools Check ---
 Write-Log "Checking for Required Tools" -Level 0
 
-# Cas spécifique pour Git (.exe installer)
+# Specific case for Git (.exe installer)
 $gitTool = $dependencies.tools.git
 if (-not (Get-Command git.exe -ErrorAction SilentlyContinue)) {
     Write-Log "Git not found. Installing..." -Level 1 -Color Yellow
@@ -160,11 +252,11 @@ if (-not (Get-Command git.exe -ErrorAction SilentlyContinue)) {
 Invoke-AndLog "git" "config --system core.longpaths true"
 Write-Log "Git is ready" -Level 1 -Color Green
 
-# Cas spécifique pour 7-Zip (.exe installer) - Amélioré
+# Specific case for 7-Zip (.exe installer) - Improved
 $sevenZipTool = $dependencies.tools.seven_zip
 $sevenZipExePath = "C:\Program Files\7-Zip\7z.exe"
 
-# On vérifie d'abord le chemin d'installation par défaut ET ensuite le PATH
+# Check the default install path first, then the user's PATH.
 if (-not (Test-Path $sevenZipExePath) -and -not (Get-Command 7z.exe -ErrorAction SilentlyContinue)) {
     Write-Log "7-Zip not found. Installing..." -Level 1 -Color Yellow
     $sevenZipInstaller = Join-Path $env:TEMP "7z-Installer.exe"
@@ -175,22 +267,21 @@ if (-not (Test-Path $sevenZipExePath) -and -not (Get-Command 7z.exe -ErrorAction
 }
 Write-Log "7-Zip is ready" -Level 1 -Color Green
 
-# Boucle générique pour les autres outils (archives .zip)
+# Generic loop for other tools (from .zip archives)
 foreach ($toolProperty in $dependencies.tools.PSObject.Properties) {
     $toolName = $toolProperty.Name
-    # On saute les outils déjà gérés
+    # Skip tools that are handled separately.
     if ($toolName -in @('python', 'git', 'vs_build_tools', 'seven_zip')) { continue }
 
     $toolConfig = $toolProperty.Value
     
-    # --- CORRECTION APPLIQUÉE ICI ---
-    # On gère le nom d'exécutable spécifique à aria2
+    # Handle the specific executable name for aria2.
     $exeName = if ($toolName -eq "aria2") { "aria2c.exe" } else { "$($toolConfig.name).exe" }
     
-    # On utilise le nom correct dans le chemin de détection
+    # Use the correct executable name for path detection.
     $exePath = Join-Path $toolConfig.install_path $exeName
 
-    # La détection est maintenant fiable
+    # This detection is now more reliable.
     if (-not (Test-Path $exePath) -and -not (Get-Command $exeName -ErrorAction SilentlyContinue)) {
         Install-Binary-From-Zip -ToolConfig $toolConfig
     } else {
@@ -204,7 +295,7 @@ if (-not (Test-Path $comfyPath)) {
     $cloneArgs = "clone $($dependencies.repositories.comfyui.url) `"$comfyPath`""
     Invoke-AndLog "git" $cloneArgs
 
-    # On vérifie si le clonage a réussi avant de continuer
+    # Verify that the clone was successful before continuing.
     if (-not (Test-Path $comfyPath)) {
         Write-Log "FATAL: ComfyUI cloning failed. The directory was not created. Please check the logs." -Level 0 -Color Red
         Read-Host "Press Enter to exit."
@@ -219,33 +310,128 @@ if (-not (Test-Path $userFolderPath)) {
     Write-Log "Creating 'user' directory to prevent database issues" -Level 1
     New-Item -Path $userFolderPath -ItemType Directory | Out-Null
 }
-if (-not (Test-Path (Join-Path $comfyPath "venv"))) { Write-Log "Creating Python virtual environment..." -Level 1; Push-Location $comfyPath; $commandParts = $pythonCommandToUse.Split(' ', 2); $executable = $commandParts[0]; $baseArguments = if ($commandParts.Length -gt 1) { $commandParts[1] } else { "" }; Invoke-AndLog $executable "$baseArguments -m venv venv"; Pop-Location; Write-Log "Venv created successfully" -Level 2 -Color Green } else { Write-Log "Venv already exists" -Level 1 -Color Green }
+if (-not (Test-Path (Join-Path $comfyPath "venv"))) {
+    Write-Log "Creating Python virtual environment..." -Level 1
+    Push-Location $comfyPath
+    $commandParts = $pythonCommandToUse.Split(' ', 2)
+    $executable = $commandParts[0]
+    $baseArguments = if ($commandParts.Length -gt 1) { $commandParts[1] } else { "" }
+    Invoke-AndLog $executable "$baseArguments -m venv venv"
+    Pop-Location
+    Write-Log "Venv created successfully" -Level 2 -Color Green
+}
+else {
+    Write-Log "Venv already exists" -Level 1 -Color Green
+}
 Invoke-AndLog "git" "config --global --add safe.directory `"$comfyPath`""
 
 # --- Step 5: Install Core Dependencies ---
 Write-Log "Installing Core Dependencies" -Level 0
-Write-Log "Upgrading pip and wheel" -Level 1; Invoke-AndLog "$venvPython" "-m pip install --upgrade $($dependencies.pip_packages.upgrade -join ' ')"
-Write-Log "Installing torch packages" -Level 1; Invoke-AndLog "$venvPython" "-m pip install --pre $($dependencies.pip_packages.torch.packages) --index-url $($dependencies.pip_packages.torch.index_url)"
-Write-Log "Installing ComfyUI requirements" -Level 1; Invoke-AndLog "$venvPython" "-m pip install -r `"$comfyPath\$($dependencies.pip_packages.comfyui_requirements)`""
+Write-Log "Upgrading pip and wheel" -Level 1
+Invoke-AndLog "$venvPython" "-m pip install --upgrade $($dependencies.pip_packages.upgrade -join ' ')"
+Write-Log "Installing torch packages" -Level 1
+Invoke-AndLog "$venvPython" "-m pip install --pre $($dependencies.pip_packages.torch.packages) --index-url $($dependencies.pip_packages.torch.index_url)"
+Write-Log "Installing ComfyUI requirements" -Level 1
+Invoke-AndLog "$venvPython" "-m pip install -r `"$comfyPath\$($dependencies.pip_packages.comfyui_requirements)`""
 
 # --- Step 6: Install Custom Nodes ---
 Write-Log "Installing Custom Nodes" -Level 0
-$csvUrl = $dependencies.files.custom_nodes_csv.url; $csvPath = Join-Path $InstallPath $dependencies.files.custom_nodes_csv.destination; Download-File -Uri $csvUrl -OutFile $csvPath
-$customNodes = Import-Csv -Path $csvPath; $customNodesPath = Join-Path $InstallPath "custom_nodes"
-foreach ($node in $customNodes) { $nodeName = $node.Name; $repoUrl = $node.RepoUrl; $nodePath = if ($node.Subfolder) { Join-Path $customNodesPath $node.Subfolder } else { Join-Path $customNodesPath $nodeName }; if (-not (Test-Path $nodePath)) { Write-Log "Installing $nodeName" -Level 1; Invoke-AndLog "git" "clone $repoUrl `"$nodePath`""; if ($node.RequirementsFile) { $reqPath = Join-Path $nodePath $node.RequirementsFile; if (Test-Path $reqPath) { Write-Log "Installing requirements for $nodeName" -Level 2; Invoke-AndLog "$venvPython" "-m pip install -r `"$reqPath`"" } } } else { Write-Log "$nodeName (already exists, skipping)" -Level 1 -Color Green } }
+$csvUrl = $dependencies.files.custom_nodes_csv.url
+$csvPath = Join-Path $InstallPath $dependencies.files.custom_nodes_csv.destination
+Download-File -Uri $csvUrl -OutFile $csvPath
+$customNodes = Import-Csv -Path $csvPath
+$customNodesPath = Join-Path $InstallPath "custom_nodes"
+foreach ($node in $customNodes) {
+    $nodeName = $node.Name
+    $repoUrl = $node.RepoUrl
+    $nodePath = if ($node.Subfolder) { Join-Path $customNodesPath $node.Subfolder } else { Join-Path $customNodesPath $nodeName }
+    if (-not (Test-Path $nodePath)) {
+        Write-Log "Installing $nodeName" -Level 1
+        Invoke-AndLog "git" "clone $repoUrl `"$nodePath`""
+        if ($node.RequirementsFile) {
+            $reqPath = Join-Path $nodePath $node.RequirementsFile
+            if (Test-Path $reqPath) {
+                Write-Log "Installing requirements for $nodeName" -Level 2
+                Invoke-AndLog "$venvPython" "-m pip install -r `"$reqPath`""
+            }
+        }
+    }
+    else {
+        Write-Log "$nodeName (already exists, skipping)" -Level 1 -Color Green
+    }
+}
 
 # --- Step 7: Install Final Python Dependencies ---
 Write-Log "Installing Final Python Dependencies" -Level 0
-Write-Log "Installing standard packages..." -Level 1; Invoke-AndLog "$venvPython" "-m pip install $($dependencies.pip_packages.standard -join ' ')"
+Write-Log "Installing standard packages..." -Level 1
+Invoke-AndLog "$venvPython" "-m pip install $($dependencies.pip_packages.standard -join ' ')"
+
 Write-Log "Installing packages from .whl files..." -Level 1
-foreach ($wheel in $dependencies.pip_packages.wheels) { Write-Log "Installing $($wheel.name)" -Level 2; $wheelPath = Join-Path $InstallPath "$($wheel.name).whl"; Download-File -Uri $wheel.url -OutFile $wheelPath; Invoke-AndLog "$venvPython" "-m pip install `"$wheelPath`""; Remove-Item $wheelPath -ErrorAction SilentlyContinue }
+foreach ($wheel in $dependencies.pip_packages.wheels) {
+    Write-Log "Installing $($wheel.name)" -Level 2
+    $wheelPath = Join-Path $InstallPath "$($wheel.name).whl"
+    Download-File -Uri $wheel.url -OutFile $wheelPath
+    Invoke-AndLog "$venvPython" "-m pip install `"$wheelPath`""
+    Remove-Item $wheelPath -ErrorAction SilentlyContinue
+}
+
 Write-Log "Installing packages from git repositories..." -Level 1
-foreach ($repo in $dependencies.pip_packages.git_repos) { Write-Log "Installing $($repo.name)..." -Level 2; $installUrl = "git+$($repo.url)@$($repo.commit)"; $pipArgs = "-m pip install `"$installUrl`""; $useOptimizations = $false; $originalPath = $env:Path; if ($repo.name -eq "xformers" -or $repo.name -eq "SageAttention") { $useOptimizations = $true; $env:PATH = "$($dependencies.tools.ccache.install_path);$originalPath"; $env:CC = "cl.exe"; $env:CXX = "cl.exe"; $env:XFORMERS_BUILD_TYPE = "Release"; $env:MAX_JOBS = $optimalParallelJobs; Write-Log "Build optimizations ENABLED (ccache, Release mode, $optimalParallelJobs jobs)" -Level 3 -Color Cyan }; if ($repo.name -eq "xformers") { $env:FORCE_CUDA = "1"; $pipArgs = "-m pip install --no-build-isolation --verbose `"$installUrl`"" }; if ($repo.name -eq "apex") { $pipArgs = "-m pip install $($repo.install_options) `"$installUrl`"" }; if ($repo.name -eq "SageAttention") { $clonePath = Join-Path $InstallPath "SageAttention_temp"; Invoke-AndLog "git" "clone $($repo.url) `"$clonePath`""; Invoke-AndLog "$venvPython" "-m pip install --no-build-isolation --verbose `"$clonePath`""; Remove-Item $clonePath -Recurse -Force -ErrorAction SilentlyContinue; continue }; Invoke-AndLog "$venvPython" $pipArgs; if ($useOptimizations) { $env:Path = $originalPath; $env:CC = $null; $env:CXX = $null; $env:XFORMERS_BUILD_TYPE = $null; $env:MAX_JOBS = $null; Write-Log "Build optimizations DISABLED" -Level 3 }; if ($repo.name -eq "xformers") { $env:FORCE_CUDA = $null } }
+foreach ($repo in $dependencies.pip_packages.git_repos) {
+    Write-Log "Installing $($repo.name)..." -Level 2
+    $installUrl = "git+$($repo.url)@$($repo.commit)"
+    $pipArgs = "-m pip install `"$installUrl`""
+    $useOptimizations = $false
+    $originalPath = $env:Path
+    if ($repo.name -eq "xformers" -or $repo.name -eq "SageAttention") {
+        $useOptimizations = $true
+        $env:PATH = "$($dependencies.tools.ccache.install_path);$originalPath"
+        $env:CC = "cl.exe"
+        $env:CXX = "cl.exe"
+        $env:XFORMERS_BUILD_TYPE = "Release"
+        $env:MAX_JOBS = $optimalParallelJobs
+        Write-Log "Build optimizations ENABLED (ccache, Release mode, $optimalParallelJobs jobs)" -Level 3 -Color Cyan
+    }
+    if ($repo.name -eq "xformers") {
+        $env:FORCE_CUDA = "1"
+        $pipArgs = "-m pip install --no-build-isolation --verbose `"$installUrl`""
+    }
+    if ($repo.name -eq "apex") {
+        $pipArgs = "-m pip install $($repo.install_options) `"$installUrl`""
+    }
+    if ($repo.name -eq "SageAttention") {
+        $clonePath = Join-Path $InstallPath "SageAttention_temp"
+        Invoke-AndLog "git" "clone $($repo.url) `"$clonePath`""
+        Invoke-AndLog "$venvPython" "-m pip install --no-build-isolation --verbose `"$clonePath`""
+        Remove-Item $clonePath -Recurse -Force -ErrorAction SilentlyContinue
+        continue
+    }
+    Invoke-AndLog "$venvPython" $pipArgs
+    if ($useOptimizations) {
+        $env:Path = $originalPath
+        $env:CC = $null
+        $env:CXX = $null
+        $env:XFORMERS_BUILD_TYPE = $null
+        $env:MAX_JOBS = $null
+        Write-Log "Build optimizations DISABLED" -Level 3
+    }
+    if ($repo.name -eq "xformers") {
+        $env:FORCE_CUDA = $null
+    }
+}
 
 # --- Step 8: Install VS Build Tools ---
 Write-Log "Checking for VS Build Tools" -Level 0
 $vsTool = $dependencies.tools.vs_build_tools
-if (-not (Test-Path $vsTool.install_path)) { Write-Log "VS Build Tools not found. Installing..." -Level 1 -Color Yellow; $vsInstaller = Join-Path $env:TEMP "vs_buildtools.exe"; Download-File -Uri $vsTool.url -OutFile $vsInstaller; Start-Process -FilePath $vsInstaller -ArgumentList $vsTool.arguments -Wait; Remove-Item $vsInstaller } else { Write-Log "Visual Studio Build Tools are already installed" -Level 1 -Color Green }
+if (-not (Test-Path $vsTool.install_path)) {
+    Write-Log "VS Build Tools not found. Installing..." -Level 1 -Color Yellow
+    $vsInstaller = Join-Path $env:TEMP "vs_buildtools.exe"
+    Download-File -Uri $vsTool.url -OutFile $vsInstaller
+    Start-Process -FilePath $vsInstaller -ArgumentList $vsTool.arguments -Wait
+    Remove-Item $vsInstaller
+}
+else {
+    Write-Log "Visual Studio Build Tools are already installed" -Level 1 -Color Green
+}
 
 # --- Step 9: Download Workflows & Settings ---
 Write-Log "Downloading Workflows & Settings..." -Level 0
@@ -296,20 +482,20 @@ foreach ($pack in $modelPacks) {
 
     $validInput = $false
     while (-not $validInput) {
-        # On utilise Write-Log pour la question, en gardant la couleur
+        # Use Write-Log for the prompt to keep the color formatting.
         Write-Log "Would you like to download $($pack.Name) models? (Y/N)" -Level 1 -Color Yellow
         $choice = Read-Host
 
         if ($choice -eq 'Y' -or $choice -eq 'y') {
             Write-Log "Launching downloader for $($pack.Name) models..." -Level 2 -Color Green
-            # L'exécution du script externe affichera ses propres logs
+            # The external script will handle its own logging.
             & $scriptPath -InstallPath $InstallPath
             $validInput = $true
         } elseif ($choice -eq 'N' -or $choice -eq 'n') {
             Write-Log "Skipping download for $($pack.Name) models." -Level 2
             $validInput = $true
         } else {
-            # On utilise Write-Log pour le message d'erreur
+            # Use Write-Log for the error message.
             Write-Log "Invalid choice. Please enter Y or N." -Level 2 -Color Red
         }
     }

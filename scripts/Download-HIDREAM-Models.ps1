@@ -12,24 +12,25 @@ param(
 #===========================================================================
 # SECTION 1: HELPER FUNCTIONS & SETUP
 #===========================================================================
-function Write-Log { 
-    param([string]$Message, [string]$Color = "White") 
+function Write-Log {
+    param([string]$Message, [string]$Color = "White")
     $logFile = Join-Path $InstallPath "logs\install_log.txt"
     $formattedMessage = "[$([DateTime]::Now.ToString('yyyy-MM-dd HH:mm:ss'))] [ModelDownloader-HiDream] $Message"
     Write-Host $Message -ForegroundColor $Color
     Add-Content -Path $logFile -Value $formattedMessage -ErrorAction SilentlyContinue
 }
 
-function Invoke-AndLog { 
-    param([string]$File, [string]$Arguments) 
+function Invoke-AndLog {
+    param([string]$File, [string]$Arguments)
     $logFile = Join-Path $InstallPath "logs\install_log.txt"
     $commandToRun = "`"$File`" $Arguments"
     $cmdArguments = "/C `"$commandToRun >> `"`"$logFile`"`" 2>&1`""
-    try { 
-        Start-Process -FilePath "cmd.exe" -ArgumentList $cmdArguments -Wait -WindowStyle Hidden 
-    } catch { 
-        Write-Log "FATAL ERROR trying to execute command: $commandToRun" -Color Red 
-    } 
+    try {
+        Start-Process -FilePath "cmd.exe" -ArgumentList $cmdArguments -Wait -WindowStyle Hidden
+    }
+    catch {
+        Write-Log "FATAL ERROR trying to execute command: $commandToRun" -Color Red
+    }
 }
 
 function Download-File {
@@ -39,7 +40,7 @@ function Download-File {
         return
     }
 
-    # Se présenter comme un navigateur moderne pour éviter les blocages
+    # Present as a modern browser to avoid being blocked.
     $modernUserAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36"
     $fileName = Split-Path -Path $Uri -Leaf
 
@@ -49,25 +50,25 @@ function Download-File {
         Invoke-AndLog "aria2c" $aria_args
     } else {
         Write-Log "Aria2 not found. Falling back to standard download: $fileName" -Color Yellow
-        # On ajoute le User-Agent à Invoke-WebRequest
+        # Add the User-Agent to Invoke-WebRequest.
         Invoke-WebRequest -Uri $Uri -OutFile $OutFile -UserAgent $modernUserAgent
     }
 }
 
-function Ask-Question { 
-    param([string]$Prompt, [string[]]$Choices, [string[]]$ValidAnswers) 
+function Ask-Question {
+    param([string]$Prompt, [string[]]$Choices, [string[]]$ValidAnswers)
     $choice = ''
-    while ($choice -notin $ValidAnswers) { 
+    while ($choice -notin $ValidAnswers) {
         Write-Log "`n$Prompt" -Color Yellow
-        foreach ($line in $Choices) { 
-            Write-Host "  $line" -ForegroundColor Green 
+        foreach ($line in $Choices) {
+            Write-Host "  $line" -ForegroundColor Green
         }
         $choice = (Read-Host "Enter your choice and press Enter").ToUpper()
-        if ($choice -notin $ValidAnswers) { 
-            Write-Log "Invalid choice. Please try again." -Color Red 
-        } 
+        if ($choice -notin $ValidAnswers) {
+            Write-Log "Invalid choice. Please try again." -Color Red
+        }
     }
-    return $choice 
+    return $choice
 }
 
 #===========================================================================
@@ -80,7 +81,7 @@ if (-not (Test-Path $modelsPath)) { Write-Log "Could not find ComfyUI models pat
 # --- GPU Detection ---
 Write-Log "-------------------------------------------------------------------------------"
 Write-Log "Checking for NVIDIA GPU to provide model recommendations..." -Color Yellow
-# ... (logique de détection GPU) ...
+# ... (GPU detection logic) ...
 Write-Log "-------------------------------------------------------------------------------"
 
 # --- Ask all questions ---
@@ -111,9 +112,15 @@ if ($fp8Choice -eq 'A') {
 
 if ($ggufChoice -ne 'E') {
     Write-Log "`nDownloading HiDream GGUF models..."
-    if ($ggufChoice -in 'A', 'D') { Download-File -Uri "$baseUrl/unet/HiDream/hidream-i1-dev-Q8_0.gguf" -OutFile (Join-Path $hidreamUnetDir "hidream-i1-dev-Q8_0.gguf") }
-    if ($ggufChoice -in 'B', 'D') { Download-File -Uri "$baseUrl/unet/HiDream/hidream-i1-dev-Q5_K_S.gguf" -OutFile (Join-Path $hidreamUnetDir "hidream-i1-dev-Q5_K_S.gguf") }
-    if ($ggufChoice -in 'C', 'D') { Download-File -Uri "$baseUrl/unet/HiDream/hidream-i1-dev-Q4_K_S.gguf" -OutFile (Join-Path $hidreamUnetDir "hidream-i1-dev-Q4_K_S.gguf") }
+    if ($ggufChoice -in 'A', 'D') {
+        Download-File -Uri "$baseUrl/unet/HiDream/hidream-i1-dev-Q8_0.gguf" -OutFile (Join-Path $hidreamUnetDir "hidream-i1-dev-Q8_0.gguf")
+    }
+    if ($ggufChoice -in 'B', 'D') {
+        Download-File -Uri "$baseUrl/unet/HiDream/hidream-i1-dev-Q5_K_S.gguf" -OutFile (Join-Path $hidreamUnetDir "hidream-i1-dev-Q5_K_S.gguf")
+    }
+    if ($ggufChoice -in 'C', 'D') {
+        Download-File -Uri "$baseUrl/unet/HiDream/hidream-i1-dev-Q4_K_S.gguf" -OutFile (Join-Path $hidreamUnetDir "hidream-i1-dev-Q4_K_S.gguf")
+    }
 }
 
 Write-Log "`nHiDream model downloads complete." -Color Green
