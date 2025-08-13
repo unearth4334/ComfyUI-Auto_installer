@@ -75,7 +75,7 @@ if ($optimalParallelJobs -lt 1) { $optimalParallelJobs = 1 }
 
 Clear-Host
 # --- Bannière ---
-Write-Log "-------------------------------------------------------------------------------"
+Write-Host "-------------------------------------------------------------------------------"
 $asciiBanner = @'
                       __  __               ___    _ ____  ______
                      / / / /___ ___  ___  /   |  (_) __ \/_  __/
@@ -84,10 +84,10 @@ $asciiBanner = @'
                    \____/_/ /_/ /_/\___/_/  |_/_/_/ |_| /_/
 '@
 Write-Host $asciiBanner -ForegroundColor Cyan
-Write-Log "-------------------------------------------------------------------------------"
-Write-Log "                           ComfyUI - Auto-Installer                            " -Color Yellow
-Write-Log "                                  Version 3.2                                  " -Color White
-Write-Log "-------------------------------------------------------------------------------"
+Write-Host "-------------------------------------------------------------------------------"
+Write-Host "                           ComfyUI - Auto-Installer                            " -Color Yellow
+Write-Host "                                  Version 3.2                                  " -Color White
+Write-Host "-------------------------------------------------------------------------------"
 
 # --- Step 1: CUDA Check ---
 Write-Log "Checking CUDA Version Compatibility" -Level 0
