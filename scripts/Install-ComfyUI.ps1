@@ -85,8 +85,8 @@ $asciiBanner = @'
 '@
 Write-Host $asciiBanner -ForegroundColor Cyan
 Write-Host "-------------------------------------------------------------------------------"
-Write-Host "                           ComfyUI - Auto-Installer                            " -Color Yellow
-Write-Host "                                  Version 3.2                                  " -Color White
+Write-Host "                           ComfyUI - Auto-Installer                            " -ForegroundColor Yellow
+Write-Host "                                  Version 3.2                                  " -ForegroundColor White
 Write-Host "-------------------------------------------------------------------------------"
 
 # --- Step 1: CUDA Check ---
