@@ -4,7 +4,7 @@ param(
 
 <#
 .SYNOPSIS
-    A PowerShell script to interactively download HiDream models for ComfyUI.
+    A PowerShell script to interactively download QWEN models for ComfyUI.
 .DESCRIPTION
     This version corrects a major syntax error in the helper functions.
 #>
@@ -15,7 +15,7 @@ param(
 function Write-Log { 
     param([string]$Message, [string]$Color = "White") 
     $logFile = Join-Path $InstallPath "logs\install_log.txt"
-    $formattedMessage = "[$([DateTime]::Now.ToString('yyyy-MM-dd HH:mm:ss'))] [ModelDownloader-HiDream] $Message"
+    $formattedMessage = "[$([DateTime]::Now.ToString('yyyy-MM-dd HH:mm:ss'))] [ModelDownloader-QWEN] $Message"
     Write-Host $Message -ForegroundColor $Color
     Add-Content -Path $logFile -Value $formattedMessage -ErrorAction SilentlyContinue
 }
@@ -84,37 +84,34 @@ Write-Log "Checking for NVIDIA GPU to provide model recommendations..." -Color Y
 Write-Log "-------------------------------------------------------------------------------"
 
 # --- Ask all questions ---
-$fp8Choice = Ask-Question "Do you want to download HiDream fp8 models? (24GB Vram recommended)" @("A) Yes", "B) No") @("A", "B")
-$ggufChoice = Ask-Question "Do you want to download HiDream GGUF models?" @("A) Q8_0 (16GB Vram)", "B) Q5_K_S (12GB Vram)", "C) Q4_K_S (less than 12GB Vram)", "D) All", "E) No") @("A", "B", "C", "D", "E")
+$baseChoice = Ask-Question "Do you want to download QWEN base models? " @("A) bf16", "B) fp8", "C) All", "D) No") @("A", "B", "C", "D")
+$ggufChoice = Ask-Question "Do you want to download QWEN GGUF models?" @("A) Q8_0", "B) Q5_K_S", "C) Q4_K_S", "D) All", "E) No") @("A", "B", "C", "D", "E")
 
 # --- Download files based on answers ---
-Write-Log "`nStarting HiDream model downloads..." -Color Cyan
+Write-Log "`nStarting QWEN model downloads..." -Color Cyan
 $baseUrl = "https://huggingface.co/UmeAiRT/ComfyUI-Auto_installer/resolve/main/models"
-$hidreamDiffDir = Join-Path $modelsPath "diffusion_models\HIDREAM"; $hidreamUnetDir = Join-Path $modelsPath "unet\HIDREAM"; $clipDir = Join-Path $modelsPath "clip"; $vaeDir  = Join-Path $modelsPath "vae"
-New-Item -Path $hidreamDiffDir, $hidreamUnetDir, $clipDir, $vaeDir -ItemType Directory -Force | Out-Null
+$QWENDiffDir = Join-Path $modelsPath "diffusion_models\QWEN"; $QWENUnetDir = Join-Path $modelsPath "unet\QWEN"; $clipDir = Join-Path $modelsPath "clip"; $vaeDir  = Join-Path $modelsPath "vae"
+New-Item -Path $QWENDiffDir, $QWENUnetDir, $clipDir, $vaeDir -ItemType Directory -Force | Out-Null
 
 $doDownload = ($fp8Choice -eq 'A' -or $ggufChoice -ne 'E')
 
 if ($doDownload) {
-    Write-Log "`nDownloading HiDream common support files (VAE, CLIPs)..."
-    Download-File -Uri "$baseUrl/vae/ae.safetensors?download=true" -OutFile (Join-Path $vaeDir "ae.safetensors")
-    Download-File -Uri "$baseUrl/clip/clip_g_hidream.safetensors" -OutFile (Join-Path $clipDir "clip_g_hidream.safetensors")
-    Download-File -Uri "$baseUrl/clip/clip_l_hidream.safetensors" -OutFile (Join-Path $clipDir "clip_l_hidream.safetensors")
-    Download-File -Uri "$baseUrl/clip/t5xxl_fp8_e4m3fn_scaled.safetensors" -OutFile (Join-Path $clipDir "t5xxl_fp8_e4m3fn_scaled.safetensors")
-    Download-File -Uri "$baseUrl/clip/llama_3.1_8b_instruct_fp8_scaled.safetensors" -OutFile (Join-Path $clipDir "llama_3.1_8b_instruct_fp8_scaled.safetensors")
+    Write-Log "`nDownloading QWEN common support files (VAE, CLIPs)..."
+    Download-File -Uri "https://huggingface.co/Comfy-Org/Qwen-Image_ComfyUI/resolve/main/split_files/vae/qwen_image_vae.safetensors" -OutFile (Join-Path $vaeDir "qwen_image_vae.safetensors")
 }
 
-if ($fp8Choice -eq 'A') {
-    Write-Log "`nDownloading HiDream fp8 model..."
-    Download-File -Uri "$baseUrl/diffusion_models/HiDream/hidream_i1_dev_fp8.safetensors" -OutFile (Join-Path $hidreamDiffDir "hidream_i1_dev_fp8.safetensors")
+if ($baseChoice -ne 'D') {
+    Write-Log "`nDownloading QWEN base model..."
+    if ($ggufChoice -in 'A', 'C') { Download-File -Uri "https://huggingface.co/Comfy-Org/Qwen-Image_ComfyUI/resolve/main/split_files/diffusion_models/qwen_image_bf16.safetensors" -OutFile (Join-Path $QWENUnetDir "qwen_image_bf16.safetensors"); Download-File -Uri "https://huggingface.co/Comfy-Org/Qwen-Image_ComfyUI/resolve/main/split_files/text_encoders/qwen_2.5_vl_7b.safetensors" -OutFile (Join-Path $clipDir "qwen_2.5_vl_7b.safetensors")}
+    if ($ggufChoice -in 'B', 'C') { Download-File -Uri "https://huggingface.co/Comfy-Org/Qwen-Image_ComfyUI/resolve/main/split_files/diffusion_models/qwen_image_fp8_e4m3fn.safetensors" -OutFile (Join-Path $QWENUnetDir "qwen_image_fp8_e4m3fn.safetensors"); Download-File -Uri "https://huggingface.co/Comfy-Org/Qwen-Image_ComfyUI/resolve/main/split_files/text_encoders/qwen_2.5_vl_7b_fp8_scaled.safetensors" -OutFile (Join-Path $clipDir "qwen_2.5_vl_7b_fp8_scaled.safetensors")}
 }
 
 if ($ggufChoice -ne 'E') {
-    Write-Log "`nDownloading HiDream GGUF models..."
-    if ($ggufChoice -in 'A', 'D') { Download-File -Uri "$baseUrl/unet/HiDream/hidream-i1-dev-Q8_0.gguf" -OutFile (Join-Path $hidreamUnetDir "hidream-i1-dev-Q8_0.gguf") }
-    if ($ggufChoice -in 'B', 'D') { Download-File -Uri "$baseUrl/unet/HiDream/hidream-i1-dev-Q5_K_S.gguf" -OutFile (Join-Path $hidreamUnetDir "hidream-i1-dev-Q5_K_S.gguf") }
-    if ($ggufChoice -in 'C', 'D') { Download-File -Uri "$baseUrl/unet/HiDream/hidream-i1-dev-Q4_K_S.gguf" -OutFile (Join-Path $hidreamUnetDir "hidream-i1-dev-Q4_K_S.gguf") }
+    Write-Log "`nDownloading QWEN GGUF models..."
+    if ($ggufChoice -in 'A', 'D') { Download-File -Uri "$baseUrl/unet/QWEN/Qwen_Image_Distill-Q8_0.gguf" -OutFile (Join-Path $QWENUnetDir "Qwen_Image_Distill-Q8_0.gguf"); Download-File -Uri "$baseUrl/clip/Qwen2.5-VL-7B-Instruct-UD-Q4_K_S.gguf" -OutFile (Join-Path $clipDir "Qwen2.5-VL-7B-Instruct-UD-Q4_K_S.gguf")}
+    if ($ggufChoice -in 'B', 'D') { Download-File -Uri "$baseUrl/unet/QWEN/Qwen_Image_Distill-Q5_K_S.gguf" -OutFile (Join-Path $QWENUnetDir "Qwen_Image_Distill-Q5_K_S.gguf"); Download-File -Uri "$baseUrl/clip/Qwen2.5-VL-7B-Instruct-UD-Q4_K_S.gguf" -OutFile (Join-Path $clipDir "Qwen2.5-VL-7B-Instruct-UD-Q4_K_S.gguf")}
+    if ($ggufChoice -in 'C', 'D') { Download-File -Uri "$baseUrl/unet/QWEN/Qwen_Image_Distill-Q4_K_S.gguf" -OutFile (Join-Path $QWENUnetDir "Qwen_Image_Distill-Q4_K_S.gguf"); Download-File -Uri "$baseUrl/clip/Qwen2.5-VL-7B-Instruct-UD-Q4_K_S.gguf" -OutFile (Join-Path $clipDir "Qwen2.5-VL-7B-Instruct-UD-Q4_K_S.gguf")}
 }
 
-Write-Log "`nHiDream model downloads complete." -Color Green
+Write-Log "`nQWEN model downloads complete." -Color Green
 Read-Host "Press Enter to return to the main installer."
