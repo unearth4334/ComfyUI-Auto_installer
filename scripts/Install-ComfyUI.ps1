@@ -261,7 +261,13 @@ if (-not (Test-Path $workflowCloneDest)) {
     Invoke-AndLog "git" "clone $workflowRepo `"$workflowCloneDest`"" 
 }
 
-# --- Step 10: Optional Model Pack Downloads ---
+# --- Step 10: Finalize Permissions ---
+Write-Log "Finalizing Folder Permissions" -Level 0
+Write-Log "Applying permissions for standard users to the installation directory..." -Level 1
+Write-Log "This will allow ComfyUI to run without administrator rights." -Level 2
+Invoke-AndLog "icacls" "`"$InstallPath`" /grant `"BUILTIN\Users`":(OI)(CI)F /T"
+
+# --- Step 11: Optional Model Pack Downloads ---
 Write-Log "Optional Model Pack Downloads" -Level 0
 
 # Copy the base models directory if it exists
@@ -308,15 +314,10 @@ foreach ($pack in $modelPacks) {
         }
     }
 }
-# --- Step 11: Finalize Permissions ---
-Write-Log "Finalizing Folder Permissions" -Level 0
-Write-Log "Applying permissions for standard users to the installation directory..." -Level 1
-Write-Log "This will allow ComfyUI to run without administrator rights." -Level 2
-Invoke-AndLog "icacls" "`"$InstallPath`" /grant `"BUILTIN\Users`":(OI)(CI)F /T"
+
 #===========================================================================
 # FINALIZATION
 #===========================================================================
-Remove-Item -Path $scriptPath -Recurse -Force
 Write-Log "-------------------------------------------------------------------------------" -Color Green
 Write-Log "Installation of ComfyUI and all nodes is complete!" -Color Green
 Read-Host "Press Enter to close this window."
