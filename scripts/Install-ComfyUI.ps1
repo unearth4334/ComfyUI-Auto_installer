@@ -330,7 +330,7 @@ Write-Log "Installing Core Dependencies" -Level 0
 Write-Log "Upgrading pip and wheel" -Level 1
 Invoke-AndLog "$venvPython" "-m pip install --upgrade $($dependencies.pip_packages.upgrade -join ' ')"
 Write-Log "Installing torch packages" -Level 1
-Invoke-AndLog "$venvPython" "-m pip install --pre $($dependencies.pip_packages.torch.packages) --index-url $($dependencies.pip_packages.torch.index_url)"
+Invoke-AndLog "$venvPython" "-m pip install $($dependencies.pip_packages.torch.packages) --index-url $($dependencies.pip_packages.torch.index_url)"
 Write-Log "Installing ComfyUI requirements" -Level 1
 Invoke-AndLog "$venvPython" "-m pip install -r `"$comfyPath\$($dependencies.pip_packages.comfyui_requirements)`""
 
