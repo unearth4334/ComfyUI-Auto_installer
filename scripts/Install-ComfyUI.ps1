@@ -199,41 +199,43 @@ if ($installedCudaVersion) {
 
 # --- Step 2: Python Check ---
 Write-Log "Checking for Python $($dependencies.tools.python.version)" -Level 0
+
 $pythonCommandToUse = $null
-$requiredPythonVersion = $dependencies.tools.python.version
+$requiredVersion = $dependencies.tools.python.version # e.g., "3.12.9"
+$requiredMajorMinor = ($requiredVersion.Split('.')[0..1]) -join '.' # e.g., "3.12"
 
 try {
-    $versionString = (py "-$requiredPythonVersion" --version 2>&1)
-    if ($versionString -like "Python $requiredPythonVersion*") {
-        Write-Log "Found Python via 'py.exe' launcher" -Level 1 -Color Green
-        $pythonCommandToUse = "py -$requiredPythonVersion"
+    # We specifically check for the major.minor version (e.g., -3.12)
+    Write-Log "Checking for Python $requiredMajorMinor via py.exe launcher..." -Level 2
+    $versionString = (py "-$requiredMajorMinor" --version 2>&1)
+
+    # Check if the output is what we expect (e.g., "Python 3.12.9")
+    if ($LASTEXITCODE -eq 0 -and $versionString -like "Python $requiredMajorMinor*") {
+        Write-Log "Found compatible Python version: $versionString" -Level 1 -Color Green
+        # Set the command to use for the rest of the script (important for venv creation)
+        $pythonCommandToUse = "py -$requiredMajorMinor"
+    } else {
+        Write-Log "A Python version was found via py.exe, but it's not the required one. ($versionString)" -Level 2
     }
 }
 catch {
-    Write-Log "py.exe launcher check failed" -Level 3
+    # This block will run if py.exe is not found or if the specific version doesn't exist.
+    Write-Log "py.exe launcher did not find Python $requiredMajorMinor." -Level 2
 }
 
 if (-not $pythonCommandToUse) {
-    $pythonExe = Get-Command python -ErrorAction SilentlyContinue
-    if ($pythonExe) {
-        $versionString = (python --version 2>&1)
-        Write-Log "Found default Python: $versionString" -Level 1
-        if ($versionString -like "Python $requiredPythonVersion*") {
-            Write-Log "Default Python is the correct version" -Level 2 -Color Green
-            $pythonCommandToUse = "python"
-        }
-    }
-}
-
-if (-not $pythonCommandToUse) {
-    Write-Log "Python $requiredPythonVersion not found. Installing..." -Level 1 -Color Yellow
+    Write-Log "Python $requiredVersion not found. Installing..." -Level 1 -Color Yellow
+    
     $pythonInstallerPath = Join-Path $env:TEMP "python-installer.exe"
     Download-File -Uri $dependencies.tools.python.url -OutFile $pythonInstallerPath
+    
     Write-Log "Running installer..." -Level 2
     Start-Process -FilePath $pythonInstallerPath -ArgumentList $dependencies.tools.python.arguments -Wait
     Remove-Item $pythonInstallerPath
-    Refresh-Path
-    $pythonCommandToUse = "py -$requiredPythonVersion"
+    
+    # After installation, the 'py.exe' command should now work.
+    $pythonCommandToUse = "py -$requiredMajorMinor"
+    Write-Log "Python $requiredVersion installed successfully." -Level 1 -Color Green
 }
 
 # --- Step 3: Required Tools Check ---
