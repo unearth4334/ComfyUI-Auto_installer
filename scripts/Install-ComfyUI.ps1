@@ -329,6 +329,12 @@ if (-not (Test-Path (Join-Path $comfyPath "venv"))) {
 else {
     Write-Log "Venv already exists" -Level 1 -Color Green
 }
+# Create the 'user' directory to prevent first-launch database errors
+$userFolderPath = Join-Path $comfyPath "user"
+if (-not (Test-Path $userFolderPath)) {
+    Write-Log "Creating 'user' directory to prevent database issues" -Level 1
+    New-Item -Path $userFolderPath -ItemType Directory | Out-Null
+}
 Invoke-AndLog "git" "config --global --add safe.directory `"$comfyPath`""
 
 # --- Step 5: Install Core Dependencies ---
