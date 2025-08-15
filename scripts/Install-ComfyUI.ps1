@@ -304,20 +304,26 @@ if (-not (Test-Path $comfyPath)) {
 } else {
     Write-Log "ComfyUI directory already exists" -Level 1 -Color Green
 }
-# Create the 'user' directory to prevent first-launch database errors
-$userFolderPath = Join-Path $comfyPath "user"
-if (-not (Test-Path $userFolderPath)) {
-    Write-Log "Creating 'user' directory to prevent database issues" -Level 1
-    New-Item -Path $userFolderPath -ItemType Directory | Out-Null
-}
+# Check if venv already exists
 if (-not (Test-Path (Join-Path $comfyPath "venv"))) {
     Write-Log "Creating Python virtual environment..." -Level 1
+
+    # --- START OF MODIFICATION ---
+
+    # 1. Get the python version from the dependencies file (e.g., "3.12.9")
+    $pythonVersion = $dependencies.tools.python.version
+
+    # 2. Build the version string for the py launcher (e.g., "3.12")
+    $pythonMajorMinor = ($pythonVersion.Split('.')[0..1]) -join '.'
+
+    # 3. Force venv creation with the specified Python version
+    Write-Log "Forcing venv creation with Python v$pythonMajorMinor using py.exe..." -Level 2
     Push-Location $comfyPath
-    $commandParts = $pythonCommandToUse.Split(' ', 2)
-    $executable = $commandParts[0]
-    $baseArguments = if ($commandParts.Length -gt 1) { $commandParts[1] } else { "" }
-    Invoke-AndLog $executable "$baseArguments -m venv venv"
+    Invoke-AndLog "py" "-$pythonMajorMinor -m venv venv"
     Pop-Location
+
+    # --- END OF MODIFICATION ---
+
     Write-Log "Venv created successfully" -Level 2 -Color Green
 }
 else {
@@ -374,6 +380,9 @@ foreach ($wheel in $dependencies.pip_packages.wheels) {
     Invoke-AndLog "$venvPython" "-m pip install `"$wheelPath`""
     Remove-Item $wheelPath -ErrorAction SilentlyContinue
 }
+
+Write-Log "Installing pinned version packages..." -Level 1
+Invoke-AndLog "$venvPython" "-m pip install $($dependencies.pip_packages.pinned -join ' ')"
 
 Write-Log "Installing packages from git repositories..." -Level 1
 foreach ($repo in $dependencies.pip_packages.git_repos) {
