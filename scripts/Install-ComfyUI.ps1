@@ -461,7 +461,7 @@ Download-File -Uri $settingsFile.url -OutFile $settingsDest
 $workflowRepo = $dependencies.repositories.workflows
 $workflowCloneDest = Join-Path $InstallPath "user\default\workflows\UmeAiRT-Workflow"
 if (-not (Test-Path $workflowCloneDest)) { 
-    Invoke-AndLog "git" "clone $workflowRepo.url `"$workflowCloneDest`""
+    Invoke-AndLog "git" "clone $($workflowRepo.url) `"$workflowCloneDest`""
 }
 
 # --- Step 10: Finalize Permissions ---
