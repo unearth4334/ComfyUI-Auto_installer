@@ -465,10 +465,11 @@ if (-not (Test-Path $workflowCloneDest)) {
 }
 
 # --- Step 10: Finalize Permissions ---
-Write-Log "Finalizing Folder Permissions" -Level 0
+Write-Log "Finalizing Folder Permissions (Universal Method)" -Level 0
 Write-Log "Applying permissions for standard users to the installation directory..." -Level 1
-Write-Log "This will allow ComfyUI to run without administrator rights." -Level 2
-Invoke-AndLog "icacls" "`"$InstallPath`" /grant `"BUILTIN\Users`":(OI)(CI)F /T"
+Write-Log "This will allow ComfyUI to run without administrator rights on any language." -Level 2
+$usersSid = New-Object System.Security.Principal.SecurityIdentifier([System.Security.Principal.WellKnownSidType]::BuiltinUsersSid, $null)
+Invoke-AndLog "icacls" "`"$InstallPath`" /grant `"*$($usersSid.Value)`":(OI)(CI)F /T"
 
 # --- Step 11: Optional Model Pack Downloads ---
 Write-Log "Optional Model Pack Downloads" -Level 0
