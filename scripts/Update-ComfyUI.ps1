@@ -106,7 +106,7 @@ Invoke-Git-Pull -DirectoryPath $workflowPath
 # --- 2. Update and Install Custom Nodes ---
 Write-Log "`n[2/3] Updating and Installing Custom Nodes..." -Color Green
 $csvUrl = $dependencies.files.custom_nodes_csv.url
-$csvPath = Join-Path $InstallPath "csv\custom_nodes.csv"
+$csvPath = Join-Path $InstallPath "scripts\custom_nodes.csv"
 
 # Download the latest list of custom nodes
 try {
