@@ -83,7 +83,11 @@ function Invoke-Pip-Install {
         Invoke-AndLog "$venvPython" "-m pip install -r `"$RequirementsPath`""
     }
 }
-
+function Download-File {
+    param([string]$Uri, [string]$OutFile)
+    Write-Log "Downloading `"$($Uri.Split('/')[-1])`"" -Color DarkGray
+    Invoke-AndLog "powershell.exe" "-NoProfile -Command `"[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12; Invoke-WebRequest -Uri '$Uri' -OutFile '$OutFile'`""
+}
 #===========================================================================
 # SECTION 2: UPDATE PROCESS
 #===========================================================================
@@ -106,7 +110,7 @@ $csvPath = Join-Path $InstallPath "csv\custom_nodes.csv"
 
 # Download the latest list of custom nodes
 try {
-    Invoke-WebRequest -Uri $csvUrl -OutFile $csvPath -ErrorAction Stop
+    Download-File -Uri $csvUrl -OutFile $csvPath
 } catch {
     Write-Log "  - ERROR: Could not download the custom nodes list. Skipping node updates." -Color Red
     return
