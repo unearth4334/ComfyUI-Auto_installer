@@ -19,7 +19,7 @@ $InstallPath = $InstallPath.Trim('"')
 function Write-Log {
     param([string]$Message, [string]$Color = "White")
     # Use the $InstallPath (passed as an argument) to find the correct log directory.
-    $logFile = Join-Path $InstallPath "logs\install_log.txt"
+    $logFile = Join-Path $InstallPath "logs\download_log.txt"
     $formattedMessage = "[$([DateTime]::Now.ToString('yyyy-MM-dd HH:mm:ss'))] [ModelDownloader] $Message"
     Write-Host $Message -ForegroundColor $Color
     Add-Content -Path $logFile -Value $formattedMessage -ErrorAction SilentlyContinue
@@ -28,7 +28,7 @@ function Write-Log {
 function Invoke-AndLog {
     param([string]$File, [string]$Arguments)
     # Use the $InstallPath to find the correct log directory.
-    $logFile = Join-Path $InstallPath "logs\install_log.txt"
+    $logFile = Join-Path $InstallPath "logs\download_log.txt"
     $commandToRun = "`"$File`" $Arguments"
     $cmdArguments = "/C `"$commandToRun >> `"`"$logFile`"`" 2>&1`""
     try {
