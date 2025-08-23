@@ -115,8 +115,8 @@ if($doDownload) {
 if ($T2VChoice -ne 'G') {
     Write-Log "`nDownloading text-to-video Models..."
     if ($T2VChoice -in 'A', 'F') {
-        Download-File -Uri "$baseUrl/diffusion_models/WAN/wan2.2_t2v_high_noise_14B_fp16.safetensors" -OutFile (Join-Path $wanDiffDir "wan2.2_t2v_high_noise_14B_fp16_scaled.safetensors")
-        Download-File -Uri "$baseUrl/diffusion_models/WAN/wan2.2_t2v_low_noise_14B_fp16.safetensors" -OutFile (Join-Path $wanDiffDir "wan2.2_t2v_low_noise_14B_fp16_scaled.safetensors")
+        Download-File -Uri "$baseUrl/diffusion_models/WAN/wan2.2_t2v_high_noise_14B_fp16.safetensors" -OutFile (Join-Path $wanDiffDir "wan2.2_t2v_high_noise_14B_fp16.safetensors")
+        Download-File -Uri "$baseUrl/diffusion_models/WAN/wan2.2_t2v_low_noise_14B_fp16.safetensors" -OutFile (Join-Path $wanDiffDir "wan2.2_t2v_low_noise_14B_fp16.safetensors")
     }
     if ($T2VChoice -in 'B', 'F') {
         Download-File -Uri "$baseUrl/diffusion_models/WAN/wan2.2_t2v_high_noise_14B_fp8_scaled.safetensors" -OutFile (Join-Path $wanDiffDir "wan2.2_t2v_high_noise_14B_fp8_scaled.safetensors")
@@ -140,8 +140,8 @@ if ($T2VChoice -ne 'G') {
 if ($T2VChoice -ne 'G') {
     Write-Log "`nDownloading text-to-video Models..."
     if ($T2VChoice -in 'A', 'F') {
-        Download-File -Uri "$baseUrl/diffusion_models/WAN/wan2.2_i2v_high_noise_14B_fp16.safetensors" -OutFile (Join-Path $wanDiffDir "wan2.2_i2v_high_noise_14B_fp16_scaled.safetensors")
-        Download-File -Uri "$baseUrl/diffusion_models/WAN/wan2.2_I2v_low_noise_14B_fp16.safetensors" -OutFile (Join-Path $wanDiffDir "wan2.2_i2v_low_noise_14B_fp16_scaled.safetensors")
+        Download-File -Uri "$baseUrl/diffusion_models/WAN/wan2.2_i2v_high_noise_14B_fp16.safetensors" -OutFile (Join-Path $wanDiffDir "wan2.2_i2v_high_noise_14B_fp16.safetensors")
+        Download-File -Uri "$baseUrl/diffusion_models/WAN/wan2.2_i2v_low_noise_14B_fp16.safetensors" -OutFile (Join-Path $wanDiffDir "wan2.2_i2v_low_noise_14B_fp16.safetensors")
     }
     if ($T2VChoice -in 'B', 'F') {
         Download-File -Uri "$baseUrl/diffusion_models/WAN/wan2.2_i2v_high_noise_14B_fp8_scaled.safetensors" -OutFile (Join-Path $wanDiffDir "wan2.2_i2v_high_noise_14B_fp8_scaled.safetensors")
