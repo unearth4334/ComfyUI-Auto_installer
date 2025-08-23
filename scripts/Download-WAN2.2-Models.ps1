@@ -138,7 +138,7 @@ if ($T2VChoice -ne 'G') {
 
 # image-to-video Models
 if ($T2VChoice -ne 'G') {
-    Write-Log "`nDownloading text-to-video Models..."
+    Write-Log "`nDownloading image-to-video Models..."
     if ($T2VChoice -in 'A', 'F') {
         Download-File -Uri "$baseUrl/diffusion_models/WAN/wan2.2_i2v_high_noise_14B_fp16.safetensors" -OutFile (Join-Path $wanDiffDir "wan2.2_i2v_high_noise_14B_fp16.safetensors")
         Download-File -Uri "$baseUrl/diffusion_models/WAN/wan2.2_i2v_low_noise_14B_fp16.safetensors" -OutFile (Join-Path $wanDiffDir "wan2.2_i2v_low_noise_14B_fp16.safetensors")
@@ -148,16 +148,16 @@ if ($T2VChoice -ne 'G') {
         Download-File -Uri "$baseUrl/diffusion_models/WAN/wan2.2_i2v_low_14B_fp8_scaled.safetensors" -OutFile (Join-Path $wanDiffDir "wan2.2_i2v_low_noise_14B_fp8_scaled.safetensors")
     }
     if ($T2VChoice -in 'C', 'F') {
-        Download-File -Uri "$baseUrl/unet/WAN/wan2.2_i2v_high_noise_14B_Q8_0.gguf" -OutFile (Join-Path $wanUnetDir "Wan2.2-I2V-A14B-HighNoise-Q8_0.gguf")
-        Download-File -Uri "$baseUrl/unet/WAN/wan2.2_i2v_low_noise_14B_Q8_0.gguf" -OutFile (Join-Path $wanUnetDir "Wan2.2-T2V-A14B-LowNoise-Q8_0.gguf")
+        Download-File -Uri "$baseUrl/unet/WAN/wan2.2_i2v_high_noise_14B_Q8_0.gguf" -OutFile (Join-Path $wanUnetDir "Wan2.2-i2V-A14B-HighNoise-Q8_0.gguf")
+        Download-File -Uri "$baseUrl/unet/WAN/wan2.2_i2v_low_noise_14B_Q8_0.gguf" -OutFile (Join-Path $wanUnetDir "Wan2.2-i2V-A14B-LowNoise-Q8_0.gguf")
     }
     if ($T2VChoice -in 'D', 'F') {
-        Download-File -Uri "$baseUrl/unet/WAN/wan2.2_i2v_high_noise_14B_Q5_K_S.gguf" -OutFile (Join-Path $wanUnetDir "Wan2.2-I2V-A14B-HighNoise-Q5_K_S.gguf")
-        Download-File -Uri "$baseUrl/unet/WAN/wan2.2_i2v_low_noise_14B_Q5_K_S.gguf" -OutFile (Join-Path $wanUnetDir "Wan2.2-I2V-A14B-LowNoise-Q5_K_S.gguf")
+        Download-File -Uri "$baseUrl/unet/WAN/wan2.2_i2v_high_noise_14B_Q5_K_S.gguf" -OutFile (Join-Path $wanUnetDir "Wan2.2-i2V-A14B-HighNoise-Q5_K_S.gguf")
+        Download-File -Uri "$baseUrl/unet/WAN/wan2.2_i2v_low_noise_14B_Q5_K_S.gguf" -OutFile (Join-Path $wanUnetDir "Wan2.2-i2V-A14B-LowNoise-Q5_K_S.gguf")
     }
     if ($T2VChoice -in 'E', 'F') {
-        Download-File -Uri "$baseUrl/unet/WAN/wan2.2_i2v_high_noise_14B_Q3_K_S.gguf" -OutFile (Join-Path $wanUnetDir "Wan2.2-I2V-A14B-HighNoise-Q3_K_S.gguf")
-        Download-File -Uri "$baseUrl/unet/WAN/wan2.2_i2v_low_noise_14B_Q3_K_S.gguf" -OutFile (Join-Path $wanUnetDir "Wan2.2-I2V-A14B-LowNoise-Q3_K_S.gguf")
+        Download-File -Uri "$baseUrl/unet/WAN/wan2.2_i2v_high_noise_14B_Q3_K_S.gguf" -OutFile (Join-Path $wanUnetDir "Wan2.2-i2V-A14B-HighNoise-Q3_K_S.gguf")
+        Download-File -Uri "$baseUrl/unet/WAN/wan2.2_i2v_low_noise_14B_Q3_K_S.gguf" -OutFile (Join-Path $wanUnetDir "Wan2.2-i2V-A14B-LowNoise-Q3_K_S.gguf")
     }
 }
 
