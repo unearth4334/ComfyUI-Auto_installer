@@ -98,11 +98,12 @@ Write-Log "---------------------------------------------------------------------
 # --- Ask all questions ---
 $T2VChoice = Ask-Question "Do you want to download WAN text-to-video models?" @("A) fp16", "B) fp8", "C) Q8_0", "D) Q5_K_M", "E) Q3_K_S", "F) All", "G) No") @("A", "B", "C", "D", "E", "F", "G")
 $I2VChoice = Ask-Question "Do you want to download WAN image-to-video models?" @("A) fp16", "B) fp8", "C) Q8_0", "D) Q5_K_M", "E) Q3_K_S", "F) All", "G) No") @("A", "B", "C", "D", "E", "F", "G")
+$LoRAChoice = Ask-Question "Do you want to download Lightning LoRA ?" @("A) Yes", "B) No") @("A", "B")
 
 # --- Download files based on answers ---
 Write-Log "`nStarting WAN model downloads..." -Color Cyan
 $baseUrl = "https://huggingface.co/UmeAiRT/ComfyUI-Auto_installer/resolve/main/models"
-$wanDiffDir = Join-Path $modelsPath "diffusion_models\WAN2.2"; $wanUnetDir = Join-Path $modelsPath "unet\WAN2.2"; $clipDir = Join-Path $modelsPath "clip"; $vaeDir  = Join-Path $modelsPath "vae" ; $visionDir  = Join-Path $modelsPath "clip_vision"
+$wanDiffDir = Join-Path $modelsPath "diffusion_models\WAN2.2"; $wanUnetDir = Join-Path $modelsPath "unet\WAN2.2"; $clipDir = Join-Path $modelsPath "clip"; $vaeDir  = Join-Path $modelsPath "vae" ; $visionDir  = Join-Path $modelsPath "clip_vision" ; $loraDir  = Join-Path $modelsPath "loras"
 New-Item -Path $wanDiffDir, $wanUnetDir, $clipDir, $vaeDir -ItemType Directory -Force | Out-Null
 $doDownload = ($T2VChoice -ne 'G' -or $I2VChoice -ne 'G')
 
@@ -159,6 +160,13 @@ if ($T2VChoice -ne 'G') {
         Download-File -Uri "$baseUrl/unet/WAN/wan2.2_i2v_high_noise_14B_Q3_K_S.gguf" -OutFile (Join-Path $wanUnetDir "Wan2.2-i2V-A14B-HighNoise-Q3_K_S.gguf")
         Download-File -Uri "$baseUrl/unet/WAN/wan2.2_i2v_low_noise_14B_Q3_K_S.gguf" -OutFile (Join-Path $wanUnetDir "Wan2.2-i2V-A14B-LowNoise-Q3_K_S.gguf")
     }
+}
+
+if($LoRAChoice -in 'A') {
+    Download-File -Uri "$baseUrl/loras/WAN2.2/Wan2.2-Lightning_I2V-A14B-4steps-lora_HIGH_fp16.safetensors" -OutFile (Join-Path $loraDir "Wan2.2-Lightning_I2V-A14B-4steps-lora_HIGH_fp16.safetensors")
+    Download-File -Uri "$baseUrl/loras/WAN2.2/Wan2.2-Lightning_I2V-A14B-4steps-lora_LOW_fp16.safetensors" -OutFile (Join-Path $loraDir "Wan2.2-Lightning_I2V-A14B-4steps-lora_LOW_fp16.safetensors")
+    Download-File -Uri "$baseUrl/loras/WAN2.2/Wan2.2-Lightning_T2V-A14B-4steps-lora_HIGH_fp16.safetensors" -OutFile (Join-Path $loraDir "Wan2.2-Lightning_T2V-A14B-4steps-lora_HIGH_fp16.safetensors")
+    Download-File -Uri "$baseUrl/loras/WAN2.2/Wan2.2-Lightning_T2V-A14B-4steps-lora_LOW_fp16.safetensors" -OutFile (Join-Path $loraDir "Wan2.2-Lightning_T2V-A14B-4steps-lora_LOW_fp16.safetensors")
 }
 
 Write-Log "`nWAN2.2 model downloads complete." -Color Green
