@@ -172,7 +172,6 @@ try {
     if ($nvccOutput -match "release ([\d\.]+),") {
         $versionString = $matches[1]
         
-        # --- FIX ---
         # If the version string has no dot (e.g., "129"), add one.
         if ($versionString -notlike "*.*" -and $versionString.Length -eq 3) {
             $installedCudaVersion = $versionString.Insert(2,'.')
@@ -310,8 +309,6 @@ if (-not (Test-Path $comfyPath)) {
 if (-not (Test-Path (Join-Path $comfyPath "venv"))) {
     Write-Log "Creating Python virtual environment..." -Level 1
 
-    # --- START OF MODIFICATION ---
-
     # 1. Get the python version from the dependencies file (e.g., "3.12.9")
     $pythonVersion = $dependencies.tools.python.version
 
@@ -323,8 +320,6 @@ if (-not (Test-Path (Join-Path $comfyPath "venv"))) {
     Push-Location $comfyPath
     Invoke-AndLog "py" "-$pythonMajorMinor -m venv venv"
     Pop-Location
-
-    # --- END OF MODIFICATION ---
 
     Write-Log "Venv created successfully" -Level 2 -Color Green
 }
