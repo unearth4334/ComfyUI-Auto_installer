@@ -175,7 +175,7 @@ foreach ($wheel in $dependencies.pip_packages.wheels) {
 
         # Force reinstall the downloaded wheel
         if (Test-Path $localWheelPath) {
-            Invoke-AndLog "$venvPython" "-m pip install --force-reinstall `"$localWheelPath`""
+            Invoke-AndLog "$venvPython" "-m pip install `"$localWheelPath`""
         } else {
             Write-Log "      - ERROR: Failed to download $wheelName" -Color Red
         }
