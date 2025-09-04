@@ -160,6 +160,35 @@ if ($pinnedPackages) {
     Invoke-AndLog "$venvPython" "-m pip install --force-reinstall $pinnedPackages"
 }
 
+# Reinstall wheel packages to ensure correct versions from JSON
+Write-Log "  - Ensuring wheel packages are at the correct version..."
+foreach ($wheel in $dependencies.pip_packages.wheels) {
+    $wheelName = $wheel.name
+    $wheelUrl = $wheel.url
+    $localWheelPath = Join-Path $env:TEMP $wheelName
+
+    Write-Log "    - Processing wheel: $wheelName" -Color Cyan
+
+    try {
+        # Download the wheel file
+        Download-File -Uri $wheelUrl -OutFile $localWheelPath
+
+        # Force reinstall the downloaded wheel
+        if (Test-Path $localWheelPath) {
+            Invoke-AndLog "$venvPython" "-m pip install --force-reinstall `"$localWheelPath`""
+        } else {
+            Write-Log "      - ERROR: Failed to download $wheelName" -Color Red
+        }
+    } catch {
+        Write-Log "      - FATAL ERROR during processing of $wheelName: $($_.Exception.Message)" -Color Red
+    } finally {
+        # Clean up the downloaded wheel file
+        if (Test-Path $localWheelPath) {
+            Remove-Item $localWheelPath -Force
+        }
+    }
+}
+
 Write-Log "==============================================================================="
 Write-Log "Update process complete!" -Color Yellow
 Write-Log "==============================================================================="
