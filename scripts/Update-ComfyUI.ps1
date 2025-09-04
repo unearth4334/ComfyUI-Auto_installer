@@ -182,7 +182,7 @@ foreach ($wheel in $dependencies.pip_packages.wheels) {
     } catch {
         # On récupère le message d'erreur sur une ligne séparée pour éviter les erreurs de syntaxe
         $errorMessage = $_.Exception.Message
-        Write-Log "      - FATAL ERROR during processing of $wheelName: $errorMessage" -Color Red
+        Write-Log "      - FATAL ERROR during processing of $wheelName : $errorMessage" -Color Red
     } finally {
         # Clean up the downloaded wheel file
         if (Test-Path $localWheelPath) {
