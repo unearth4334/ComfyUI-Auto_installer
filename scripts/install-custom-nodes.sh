@@ -10,18 +10,32 @@
 # SECTION 1: SCRIPT CONFIGURATION & HELPER FUNCTIONS
 #===========================================================================
 
-# Get ComfyUI root path from first argument (mandatory)
+# Parse arguments for ComfyUI root path and optional venv path
 if [ $# -eq 0 ]; then
     echo "Error: ComfyUI root directory is required as an argument."
     exit 1
 fi
 
 COMFY_PATH="$1"
+CUSTOM_VENV_PATH=""
+
+# Check for optional venv-path argument
+if [ $# -ge 3 ] && [ "$2" = "--venv-path" ]; then
+    CUSTOM_VENV_PATH="$3"
+fi
+
 # Derive other paths from ComfyUI root and script location
 SCRIPT_DIR="$(dirname "$(realpath "$0")")"
 INSTALL_PATH="$(dirname "$SCRIPT_DIR")"
 SCRIPT_PATH="$INSTALL_PATH/scripts"
-VENV_PYTHON="$COMFY_PATH/venv/bin/python"
+
+# Set venv python path - use custom path if provided, otherwise default
+if [ -n "$CUSTOM_VENV_PATH" ]; then
+    VENV_PYTHON="$CUSTOM_VENV_PATH"
+else
+    VENV_PYTHON="$COMFY_PATH/venv/bin/python"
+fi
+
 LOG_PATH="$INSTALL_PATH/logs"
 LOG_FILE="$LOG_PATH/install_custom_nodes_log.txt"
 
