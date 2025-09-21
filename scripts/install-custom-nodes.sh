@@ -10,9 +10,16 @@
 # SECTION 1: SCRIPT CONFIGURATION & HELPER FUNCTIONS
 #===========================================================================
 
-# Set default install path to parent directory of scripts folder
-INSTALL_PATH="${1:-$(dirname "$(dirname "$(realpath "$0")")")}"
-COMFY_PATH="$INSTALL_PATH/ComfyUI"
+# Get ComfyUI root path from first argument (mandatory)
+if [ $# -eq 0 ]; then
+    echo "Error: ComfyUI root directory is required as an argument."
+    exit 1
+fi
+
+COMFY_PATH="$1"
+# Derive other paths from ComfyUI root and script location
+SCRIPT_DIR="$(dirname "$(realpath "$0")")"
+INSTALL_PATH="$(dirname "$SCRIPT_DIR")"
 SCRIPT_PATH="$INSTALL_PATH/scripts"
 VENV_PYTHON="$COMFY_PATH/venv/bin/python"
 LOG_PATH="$INSTALL_PATH/logs"
