@@ -2,42 +2,39 @@
   "tools": {
     "python": {
       "version": "3.12.9",
-      "url": "https://www.python.org/ftp/python/3.12.9/python-3.12.9-amd64.exe",
-      "arguments": "/quiet InstallAllUsers=1 PrependPath=1"
+      "package_name": "python3.12",
+      "install_method": "package_manager"
     },
     "git": {
-      "version": "2.41.0.3",
-      "url": "https://github.com/git-for-windows/git/releases/download/v2.41.0.windows.3/Git-2.41.0.3-64-bit.exe",
-      "arguments": "/VERYSILENT"
+      "version": "latest",
+      "package_name": "git",
+      "install_method": "package_manager"
     },
-    "seven_zip": {
-      "name": "7-Zip",
-      "version": "25.01",
-      "url": "https://www.7-zip.org/a/7z2501-x64.exe",
-      "install_path": "C:\\Program Files\\7-Zip"
+    "build_tools": {
+      "packages": ["build-essential", "cmake", "pkg-config"],
+      "install_method": "package_manager"
     },
     "aria2": {
       "name": "aria2",
-      "version": "1.36.0",
-      "url": "https://github.com/aria2/aria2/releases/download/release-1.36.0/aria2-1.36.0-win-64bit-build1.zip",
-      "install_path": "C:\\ProgramData\\aria2"
+      "version": "latest",
+      "package_name": "aria2",
+      "install_method": "package_manager"
     },
     "ninja": {
       "name": "ninja",
-      "version": "1.13.1",
-      "url": "https://github.com/ninja-build/ninja/releases/download/v1.13.1/ninja-win.zip",
-      "install_path": "C:\\ProgramData\\ninja"
-    },
-    "vs_build_tools": {
-      "url": "https://aka.ms/vs/17/release/vs_BuildTools.exe",
-      "arguments": "--quiet --wait --norestart --add Microsoft.VisualStudio.Component.VC.Tools.x86.x64 --add Microsoft.VisualStudio.Component.VC.CMake.Project --add Microsoft.VisualStudio.Component.Windows11SDK.26100",
-      "install_path": "C:\\Program Files (x86)\\Microsoft Visual Studio\\2022\\BuildTools"
+      "version": "latest",
+      "package_name": "ninja-build",
+      "install_method": "package_manager"
     },
     "ccache": {
       "name": "ccache",
-      "version": "4.11.3",
-      "url": "https://github.com/ccache/ccache/releases/download/v4.11.3/ccache-4.11.3-windows-x86_64.zip",
-      "install_path": "C:\\ProgramData\\ccache"
+      "version": "latest",
+      "package_name": "ccache",
+      "install_method": "package_manager"
+    },
+    "compression_tools": {
+      "packages": ["p7zip-full", "unzip"],
+      "install_method": "package_manager"
     }
   },
   "repositories": {
@@ -60,12 +57,8 @@
     "comfyui_requirements": "requirements.txt",
     "wheels": [
       {
-        "name": "nunchaku-1.0.0.dev20250904+torch2.8-cp312-cp312-win_amd64.whl",
-        "url": "https://github.com/nunchaku-tech/nunchaku/releases/download/v1.0.0dev20250904/nunchaku-1.0.0.dev20250904+torch2.8-cp312-cp312-win_amd64.whl"
-      },
-      {
-        "name": "insightface-0.7.3-cp312-cp312-win_amd64",
-        "url": "https://github.com/UmeAiRT/ComfyUI-Auto_installer/raw/refs/heads/main/whl/insightface-0.7.3-cp312-cp312-win_amd64.whl"
+        "name": "nunchaku-1.0.0.dev20250904+torch2.8-cp312-cp312-linux_x86_64.whl",
+        "url": "https://github.com/nunchaku-tech/nunchaku/releases/download/v1.0.0dev20250904/nunchaku-1.0.0.dev20250904+torch2.8-cp312-cp312-linux_x86_64.whl"
       },
       {
         "name": "triton-3.3.0-py3-none-any",
@@ -77,7 +70,7 @@
       "cython",
       "onnxruntime",
       "onnxruntime-gpu",
-      "triton-windows"
+      "insightface"
     ],
     "pinned": [
       "numpy==1.26.4",
