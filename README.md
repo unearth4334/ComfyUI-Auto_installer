@@ -1,10 +1,11 @@
-# UmeAiRT's ComfyUI Auto-Installer (Linux)
+# UmeAiRT's ComfyUI Auto-Installer
 
 ![Bash](https://img.shields.io/badge/Bash-4.0%2B-green.svg)
-![Platform](https://img.shields.io/badge/Platform-Linux-blue.svg)
+![PowerShell](https://img.shields.io/badge/PowerShell-5.1%2B-blue.svg)
+![Platform](https://img.shields.io/badge/Platform-Linux%20%7C%20Windows-blue.svg)
 ![License](https://img.shields.io/badge/License-MIT-green.svg)
 
-This project provides a suite of bash scripts to fully automate the installation and configuration of ComfyUI on Linux. The approach uses a clean installation based on `git` and a Python virtual environment (`venv`), ensuring an isolated, easy-to-update, and maintainable setup.
+This project provides a suite of scripts to fully automate the installation and configuration of ComfyUI on Linux and Windows. The approach uses a clean installation based on `git` and a Python virtual environment (`venv`), ensuring an isolated, easy-to-update, and maintainable setup.
 
 ## Features
 
@@ -24,14 +25,16 @@ This project provides a suite of bash scripts to fully automate the installation
 
 ## Prerequisites
 
-- Linux distribution (Ubuntu, Debian, Fedora, CentOS, Arch, openSUSE supported)
+- Linux distribution (Ubuntu, Debian, Fedora, CentOS, Arch, openSUSE supported) or Windows 10/11
 - An active internet connection
-- Root/sudo privileges for system package installation
+- Root/sudo privileges for system package installation (Linux) or Administrator privileges (Windows)
 - An NVIDIA GPU is strongly recommended to use the models
 
 ## Installation and Usage
 
 The entire process is designed to be as simple as possible.
+
+### Linux Installation
 
 1.  **Download the Project:** Download this repository as a ZIP file from GitHub and extract it to a folder of your choice (e.g., `/home/user/UmeAiRT-Installer`).
 
@@ -47,6 +50,17 @@ The entire process is designed to be as simple as possible.
     - The main installation script will then launch. It will install Python (if necessary), Git, build tools, Aria2, and then ComfyUI.
     - Next, it will install all custom nodes and their Python dependencies into the virtual environment.
     - Finally, it will ask you a series of questions about which model packs you wish to download. Simply answer `y` (yes) or `n` (no) to each question.
+
+### Windows Installation
+
+1.  **Download the Project:** Download this repository as a ZIP file from GitHub and extract it to a folder of your choice.
+
+2.  **Run the Installer:**
+    - In the folder, find and run the file `UmeAiRT-Install-ComfyUI.bat` as Administrator.
+    - The PowerShell script will handle the installation automatically.
+
+3.  **Custom Nodes Only (Windows):**
+    - If you already have ComfyUI installed and only want to add custom nodes, run `UmeAiRT-Install-Custom-Nodes.bat` as Administrator.
 
 At the end of the process, your ComfyUI installation will be complete and ready to use.
 
@@ -66,6 +80,11 @@ Three main shell scripts will be available in your folder to manage the applicat
     - Execute this script to **update your entire installation**. It will update the code for ComfyUI, all custom nodes, and your workflows, and install any new Python dependencies if required.
     - Run with: `./update-comfyui.sh`
 
+- **`install-custom-nodes.sh`**
+    - Use this script to **install only custom nodes** when ComfyUI is already installed. This is useful if you want to add custom nodes to an existing ComfyUI installation without reinstalling everything.
+    - The script validates that ComfyUI is properly installed before proceeding.
+    - Run with: `./install-custom-nodes.sh`
+
 ## File Structure
 
 - **`/` (your root folder)**
@@ -73,9 +92,11 @@ Three main shell scripts will be available in your folder to manage the applicat
     - `start-comfyui.sh` (Created after installation to launch ComfyUI)
     - `update-comfyui.sh` (Launcher for the update script)
     - `download-models.sh` (Menu to download more models later)
+    - `install-custom-nodes.sh` (Install only custom nodes to existing ComfyUI)
     - **`scripts/`** (Contains all bash scripts)
         - `install-comfyui-main.sh`
         - `update-comfyui-main.sh`
+        - `install-custom-nodes.sh`
         - `download-flux-models.sh` (and other model downloaders)
         - `custom_nodes.csv` (The list of all custom nodes to install)
         - `dependencies.json` (Linux-compatible dependencies)
