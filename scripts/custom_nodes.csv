@@ -8,10 +8,9 @@ ComfyUI-Custom-Scripts,https://github.com/pythongosssss/ComfyUI-Custom-Scripts.g
 ComfyUI-KJNodes,https://github.com/kijai/ComfyUI-KJNodes.git,,requirements.txt
 ComfyUI-WanVideoWrapper,https://github.com/kijai/ComfyUI-WanVideoWrapper.git,,requirements.txt
 ComfyUI-VideoHelperSuite,https://github.com/Kosinkadink/ComfyUI-VideoHelperSuite.git,,requirements.txt
-ComfyUI-Frame-Interpolation,https://github.com/Fannovel16/ComfyUI-Frame-Interpolation.git,,requirements-with-cupy.txt
+ComfyUI-Frame-Interpolation,https://github.com/Fannovel16/ComfyUI-Frame-Interpolation.git,,requirements-no-cupy.txt
 rgthree-comfy,https://github.com/rgthree/rgthree-comfy.git,,requirements.txt
 ComfyUI-Easy-Use,https://github.com/yolain/ComfyUI-Easy-Use.git,,requirements.txt
-ComfyUI_PuLID_Flux_ll,https://github.com/lldacing/ComfyUI_PuLID_Flux_ll.git,,requirements.txt
 ComfyUI-HunyuanVideoMultiLora,https://github.com/facok/ComfyUI-HunyuanVideoMultiLora.git,,
 was-node-suite-comfyui,https://github.com/WASasquatch/was-node-suite-comfyui.git,,requirements.txt
 ComfyUI-Florence2,https://github.com/kijai/ComfyUI-Florence2.git,,requirements.txt
@@ -21,7 +20,6 @@ ComfyUI-Image-Saver,https://github.com/alexopus/ComfyUI-Image-Saver.git,,require
 ComfyUI_UltimateSDUpscale,https://github.com/ssitu/ComfyUI_UltimateSDUpscale.git,,
 comfyui_controlnet_aux,https://github.com/Fannovel16/comfyui_controlnet_aux.git,,requirements.txt
 x-flux-comfyui,https://github.com/XLabs-AI/x-flux-comfyui.git,,requirements.txt
-ComfyUI-RMBG,https://github.com/1038lab/ComfyUI-RMBG.git,,requirements.txt
 ComfyUI-Detail-Daemon,https://github.com/Jonseed/ComfyUI-Detail-Daemon.git,,requirements.txt
 ComfyUI-TeaCache,https://github.com/welltop-cn/ComfyUI-TeaCache.git,,requirements.txt
 ComfyUI-Crystools,https://github.com/crystian/ComfyUI-Crystools.git,,requirements.txt
