@@ -50,6 +50,109 @@ fi
 # Create logs directory if it doesn't exist
 mkdir -p "$LOG_PATH"
 
+# Progress tracking file (JSON format for easy parsing)
+PROGRESS_FILE="/tmp/custom_nodes_progress.json"
+
+# Initialize progress file
+init_progress_file() {
+    cat > "$PROGRESS_FILE" << 'EOF'
+{
+  "status": "initializing",
+  "total_nodes": 0,
+  "processed": 0,
+  "successful": 0,
+  "failed": 0,
+  "nodes": []
+}
+EOF
+}
+
+# Update progress file with node status
+update_node_progress() {
+    local node_name="$1"
+    local status="$2"
+    local message="${3:-}"
+    
+    # Use Python for reliable JSON manipulation
+    "$VENV_PYTHON" -c "
+import json
+import sys
+
+try:
+    with open('$PROGRESS_FILE', 'r') as f:
+        data = json.load(f)
+    
+    # Find or create node entry
+    node_entry = None
+    for node in data['nodes']:
+        if node['name'] == '$node_name':
+            node_entry = node
+            break
+    
+    if node_entry is None:
+        node_entry = {'name': '$node_name', 'status': 'pending', 'message': ''}
+        data['nodes'].append(node_entry)
+    
+    # Update node status
+    node_entry['status'] = '$status'
+    node_entry['message'] = '''$message'''
+    
+    # Update counters
+    if '$status' in ['success', 'failed', 'partial']:
+        data['processed'] = sum(1 for n in data['nodes'] if n['status'] in ['success', 'failed', 'partial'])
+    
+    data['successful'] = sum(1 for n in data['nodes'] if n['status'] == 'success')
+    data['failed'] = sum(1 for n in data['nodes'] if n['status'] == 'failed')
+    
+    # Write atomically
+    with open('$PROGRESS_FILE.tmp', 'w') as f:
+        json.dump(data, f, indent=2)
+    
+    import os
+    os.replace('$PROGRESS_FILE.tmp', '$PROGRESS_FILE')
+    
+except Exception as e:
+    print(f'Error updating progress: {e}', file=sys.stderr)
+    sys.exit(1)
+" 2>> "$LOG_FILE"
+}
+
+# Set overall status
+set_progress_status() {
+    local status="$1"
+    "$VENV_PYTHON" -c "
+import json
+try:
+    with open('$PROGRESS_FILE', 'r') as f:
+        data = json.load(f)
+    data['status'] = '$status'
+    with open('$PROGRESS_FILE.tmp', 'w') as f:
+        json.dump(data, f, indent=2)
+    import os
+    os.replace('$PROGRESS_FILE.tmp', '$PROGRESS_FILE')
+except:
+    pass
+" 2>> "$LOG_FILE"
+}
+
+# Set total nodes count
+set_total_nodes() {
+    local total="$1"
+    "$VENV_PYTHON" -c "
+import json
+try:
+    with open('$PROGRESS_FILE', 'r') as f:
+        data = json.load(f)
+    data['total_nodes'] = $total
+    with open('$PROGRESS_FILE.tmp', 'w') as f:
+        json.dump(data, f, indent=2)
+    import os
+    os.replace('$PROGRESS_FILE.tmp', '$PROGRESS_FILE')
+except:
+    pass
+" 2>> "$LOG_FILE"
+}
+
 # Function to write log messages
 write_log() {
     local message="$1"
@@ -124,6 +227,9 @@ invoke_and_log() {
 
 write_log "ComfyUI Custom Nodes Installer" 0
 
+# Initialize progress tracking
+init_progress_file
+
 # Check if ComfyUI is installed
 if [ ! -d "$COMFY_PATH" ]; then
     write_log "ComfyUI installation not found at: $COMFY_PATH" 1 "red"
@@ -167,11 +273,18 @@ if [ -f "$CUSTOM_NODES_CSV" ]; then
     
     write_log "Found $TOTAL_NODES custom nodes to process" 1
     
+    # Set total nodes in progress file
+    set_total_nodes "$TOTAL_NODES"
+    set_progress_status "installing"
+    
     # Skip header line and process each custom node
     tail -n +2 "$CUSTOM_NODES_CSV" | while IFS=',' read -r name repo_url subfolder requirements_file; do
         if [ -n "$name" ] && [ -n "$repo_url" ]; then
             ((CURRENT_NODE++))
             write_log "[$CURRENT_NODE/$TOTAL_NODES] Processing custom node: $name" 1
+            
+            # Update progress: node is being processed
+            update_node_progress "$name" "installing" "Processing node $CURRENT_NODE/$TOTAL_NODES"
             
             if [ -n "$subfolder" ]; then
                 NODE_PATH="$CUSTOM_NODES_PATH/$subfolder"
@@ -181,26 +294,40 @@ if [ -f "$CUSTOM_NODES_CSV" ]; then
             
             if [ ! -d "$NODE_PATH" ]; then
                 write_log "Cloning repository: $repo_url" 2
+                update_node_progress "$name" "cloning" "Cloning repository..."
+                
                 if invoke_and_log git clone "$repo_url" "$NODE_PATH"; then
                     write_log "Successfully cloned $name" 2 "green"
                     
                     # Install requirements if specified
                     if [ -n "$requirements_file" ] && [ -f "$NODE_PATH/$requirements_file" ]; then
                         write_log "Installing requirements: $requirements_file" 2
+                        update_node_progress "$name" "installing_requirements" "Installing dependencies..."
+                        
                         if invoke_and_log "$VENV_PYTHON" -m pip install -r "$NODE_PATH/$requirements_file"; then
                             write_log "Successfully installed requirements for $name" 2 "green"
+                            update_node_progress "$name" "success" "Installed successfully"
                         else
                             write_log "Failed to install requirements for $name" 2 "yellow"
+                            update_node_progress "$name" "partial" "Cloned, but requirements failed"
                         fi
+                    else
+                        # No requirements file, mark as success after clone
+                        update_node_progress "$name" "success" "Installed successfully"
                     fi
                 else
                     write_log "Failed to clone $name" 2 "red"
+                    update_node_progress "$name" "failed" "Failed to clone repository"
                 fi
             else
                 write_log "Custom node $name already exists, skipping" 2 "gray"
+                update_node_progress "$name" "success" "Already installed"
             fi
         else
             write_log "Skipping invalid entry: name='$name', repo_url='$repo_url'" 2 "yellow"
+            if [ -n "$name" ]; then
+                update_node_progress "$name" "failed" "Invalid configuration"
+            fi
         fi
     done
 else
@@ -213,6 +340,9 @@ fi
 #===========================================================================
 # SECTION 4: COMPLETION
 #===========================================================================
+
+# Set final status
+set_progress_status "completed"
 
 write_log "Custom Nodes Installation Complete!" 0 "green"
 write_log "All custom nodes have been installed to: $CUSTOM_NODES_PATH" 1 "green"
