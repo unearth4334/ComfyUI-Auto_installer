@@ -275,3 +275,4 @@ echo "• You can now start ComfyUI to use the new nodes"
 echo "============================================================"
 echo
 
+read -p "Press Enter to close this window."
