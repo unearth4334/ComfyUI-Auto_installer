@@ -94,6 +94,7 @@ write_json_progress() {
     local failed="${7:-0}"
     local has_requirements="${8:-false}"
     local requirements_status="${9:-}"
+    local clone_progress="${10:-}"
     
     # Escape node name for JSON (replace quotes with escaped quotes)
     local escaped_node=$(echo "$current_node" | sed 's/"/\\"/g')
@@ -121,12 +122,112 @@ write_json_progress() {
   "current_status": "$current_status",
   "successful": $successful,
   "failed": $failed,
-  "successful_clones": $successful,
-  "failed_clones": $failed,
   "has_requirements": $has_requirements$([ -n "$requirements_status" ] && echo ",
-  \"requirements_status\": \"$requirements_status\"" || echo "")
+  \"requirements_status\": \"$requirements_status\"" || echo "")$([ -n "$clone_progress" ] && echo ",
+  \"clone_progress\": $clone_progress" || echo "")
 }
 EOF
+}
+
+# Write JSON progress file with download statistics
+write_json_progress_with_stats() {
+    local in_progress="$1"
+    local total_nodes="$2"
+    local processed="$3"
+    local current_node="$4"
+    local current_status="$5"
+    local successful="${6:-0}"
+    local failed="${7:-0}"
+    local has_requirements="${8:-false}"
+    local requirements_status="${9:-}"
+    local clone_progress="${10:-}"
+    local download_rate="${11:-}"
+    local data_received="${12:-}"
+    
+    # Escape node name and strings for JSON (replace quotes with escaped quotes)
+    local escaped_node=$(echo "$current_node" | sed 's/"/\\"/g')
+    local escaped_rate=$(echo "$download_rate" | sed 's/"/\\"/g')
+    local escaped_data=$(echo "$data_received" | sed 's/"/\\"/g')
+    
+    # Determine completion status
+    local completed="false"
+    local success_status="true"
+    if [ "$in_progress" = "false" ]; then
+        completed="true"
+        # Installation is successful if we have no failed nodes, or at least some successful ones
+        if [ "$failed" -gt 0 ] && [ "$successful" -eq 0 ]; then
+            success_status="false"
+        fi
+    fi
+    
+    # Build JSON object with completed and success fields
+    cat > "$PROGRESS_JSON" <<EOF
+{
+  "in_progress": $in_progress,
+  "completed": $completed,
+  "success": $success_status,
+  "total_nodes": $total_nodes,
+  "processed": $processed,
+  "current_node": "$escaped_node",
+  "current_status": "$current_status",
+  "successful": $successful,
+  "failed": $failed,
+  "has_requirements": $has_requirements$([ -n "$requirements_status" ] && echo ",
+  \"requirements_status\": \"$requirements_status\"" || echo "")$([ -n "$clone_progress" ] && echo ",
+  \"clone_progress\": $clone_progress" || echo "")$([ -n "$download_rate" ] && echo ",
+  \"download_rate\": \"$escaped_rate\"" || echo "")$([ -n "$data_received" ] && echo ",
+  \"data_received\": \"$escaped_data\"" || echo "")
+}
+EOF
+}
+
+# Function to clone repository with progress updates
+clone_with_progress() {
+    local repo_url="$1"
+    local target_path="$2"
+    local node_name="$3"
+    local total_nodes="$4"
+    local current_node="$5"
+    local successful="$6"
+    local failed="$7"
+    
+    # Patterns for parsing git clone output
+    local progress_pattern='Receiving objects:[[:space:]]*([0-9]+)%'
+    local data_rate_pattern='([0-9.]+[[:space:]]+(KiB|MiB|GiB))[[:space:]]*\|[[:space:]]*([0-9.]+[[:space:]]+(KiB|MiB|GiB)/s)'
+    local data_only_pattern='([0-9.]+[[:space:]]+(KiB|MiB|GiB))'
+    
+    # Run git clone with progress output
+    git clone --progress --depth 1 "$repo_url" "$target_path" 2>&1 | while IFS= read -r line; do
+        # Git outputs progress like: "Receiving objects: 45% (123/456), 2.5 MiB | 1.2 MiB/s"
+        local progress=""
+        local download_rate=""
+        local data_received=""
+        
+        # Extract percentage (e.g., "Receiving objects: 45%")
+        if [[ "$line" =~ Receiving[[:space:]]+objects:[[:space:]]*([0-9]+)% ]]; then
+            progress="${BASH_REMATCH[1]}"
+        fi
+        
+        # Extract data and rate (e.g., "2.5 MiB | 1.2 MiB/s")
+        if [[ "$line" =~ ([0-9.]+[[:space:]]+(KiB|MiB|GiB))[[:space:]]*\|[[:space:]]*([0-9.]+[[:space:]]+(KiB|MiB|GiB)/s) ]]; then
+            data_received="${BASH_REMATCH[1]}"
+            download_rate="${BASH_REMATCH[3]} ${BASH_REMATCH[4]}"
+        elif [[ "$line" =~ ([0-9.]+[[:space:]]+(KiB|MiB|GiB)) ]] && [[ ! "$line" =~ /s ]]; then
+            # Just data received, no rate yet
+            data_received="${BASH_REMATCH[1]}"
+        fi
+        
+        # Update JSON progress with clone statistics
+        if [ -n "$progress" ] || [ -n "$download_rate" ] || [ -n "$data_received" ]; then
+            write_json_progress_with_stats true "$total_nodes" "$current_node" "$node_name" "running" "$successful" "$failed" false "" "$progress" "$download_rate" "$data_received"
+        fi
+        
+        # Log the output
+        echo "$line" >> "$LOG_FILE"
+    done
+    
+    # Return the exit code of git clone (from PIPESTATUS)
+    return ${PIPESTATUS[0]}
 }
 
 # Function to write log messages
@@ -200,6 +301,43 @@ invoke_and_log() {
     fi
 }
 
+# Function to install pip requirements with progress tracking
+install_requirements_with_progress() {
+    local python_bin="$1"
+    local requirements_file="$2"
+    local node_name="$3"
+    local total_nodes="$4"
+    local current_node="$5"
+    local successful="$6"
+    local failed="$7"
+    
+    write_log "Executing: $python_bin -m pip install -r $requirements_file" 3
+    
+    # Run pip install with progress output
+    "$python_bin" -m pip install -r "$requirements_file" 2>&1 | while IFS= read -r line; do
+        # Log the output
+        echo "$line" >> "$LOG_FILE"
+        
+        # Parse pip output for package being installed
+        # Pip outputs like: "Collecting package-name", "Downloading package (size)", "Installing collected packages: ..."
+        local current_package=""
+        local download_progress=""
+        
+        if [[ "$line" =~ Collecting[[:space:]]+([^[:space:]]+) ]]; then
+            current_package="${BASH_REMATCH[1]}"
+            write_json_progress_with_stats true "$total_nodes" "$current_node" "$node_name" "running" "$successful" "$failed" true "running (collecting $current_package)" "" "" ""
+        elif [[ "$line" =~ ^Downloading ]]; then
+            # Just indicate downloading without parsing size
+            write_json_progress_with_stats true "$total_nodes" "$current_node" "$node_name" "running" "$successful" "$failed" true "running (downloading)" "" "" ""
+        elif [[ "$line" =~ Installing[[:space:]]+collected[[:space:]]+packages ]]; then
+            write_json_progress_with_stats true "$total_nodes" "$current_node" "$node_name" "running" "$successful" "$failed" true "running (installing)" "" "" ""
+        fi
+    done
+    
+    # Return the exit code of pip install
+    return ${PIPESTATUS[0]}
+}
+
 #===========================================================================
 # SECTION 2: VALIDATION
 #===========================================================================
@@ -249,8 +387,8 @@ if [ -f "$CUSTOM_NODES_CSV" ]; then
     CUSTOM_NODES_PATH="$COMFY_PATH/custom_nodes"
     mkdir -p "$CUSTOM_NODES_PATH"
     
-    # Count total nodes for progress tracking
-    TOTAL_NODES=$(tail -n +2 "$CUSTOM_NODES_CSV" | wc -l)
+    # Count total nodes for progress tracking (exclude empty lines)
+    TOTAL_NODES=$(tail -n +2 "$CUSTOM_NODES_CSV" | grep -v "^[[:space:]]*$" | wc -l)
     CURRENT_NODE=0
     SUCCESSFUL_NODES=0
     FAILED_NODES=0
@@ -286,7 +424,20 @@ if [ -f "$CUSTOM_NODES_CSV" ]; then
                 write_log "Cloning repository: $repo_url" 2
                 write_progress_log "NODE" "$name" "cloning" "Cloning repository"
                 
-                if invoke_and_log git clone "$repo_url" "$NODE_PATH"; then
+                if clone_with_progress "$repo_url" "$NODE_PATH" "$name" "$TOTAL_NODES" "$CURRENT_NODE" "$SUCCESSFUL_NODES" "$FAILED_NODES"; then
+                    # Validate the clone - check if it has valid git history
+                    if ! (cd "$NODE_PATH" && git rev-parse HEAD >/dev/null 2>&1); then
+                        write_log "Clone validation failed for $name, repository is empty or invalid. Re-cloning..." 2 "yellow"
+                        rm -rf "$NODE_PATH"
+                        if ! clone_with_progress "$repo_url" "$NODE_PATH" "$name" "$TOTAL_NODES" "$CURRENT_NODE" "$SUCCESSFUL_NODES" "$FAILED_NODES"; then
+                            write_log "Failed to re-clone $name" 2 "red"
+                            write_progress_log "NODE" "$name" "failed" "Failed to clone repository"
+                            ((FAILED_NODES++))
+                            write_json_progress true "$TOTAL_NODES" "$CURRENT_NODE" "$name" "failed" "$SUCCESSFUL_NODES" "$FAILED_NODES" false
+                            continue
+                        fi
+                    fi
+                    
                     write_log "Successfully cloned $name" 2 "green"
                     ((SUCCESSFUL_NODES++))
                     
@@ -298,7 +449,7 @@ if [ -f "$CUSTOM_NODES_CSV" ]; then
                         # Update JSON progress to show requirements installation
                         write_json_progress true "$TOTAL_NODES" "$CURRENT_NODE" "$name" "running" "$SUCCESSFUL_NODES" "$FAILED_NODES" true "running"
                         
-                        if invoke_and_log "$VENV_PYTHON" -m pip install -r "$NODE_PATH/$requirements_file"; then
+                        if install_requirements_with_progress "$VENV_PYTHON" "$NODE_PATH/$requirements_file" "$name" "$TOTAL_NODES" "$CURRENT_NODE" "$SUCCESSFUL_NODES" "$FAILED_NODES"; then
                             write_log "Successfully installed requirements for $name" 2 "green"
                             write_progress_log "NODE" "$name" "success" "Installed successfully"
                             
@@ -337,7 +488,7 @@ if [ -f "$CUSTOM_NODES_CSV" ]; then
         else
             write_log "Skipping invalid entry: name='$name', repo_url='$repo_url'" 2 "yellow"
             if [ -n "$name" ]; then
-                write_progress_log "NODE" "$name" "failed" "Invalid configuration"
+                write_progress_log "NODE" "$name" "failed" "Invalid configuration" 
                 ((FAILED_NODES++))
                 ((CURRENT_NODE++))
                 
